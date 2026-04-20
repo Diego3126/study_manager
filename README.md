@@ -398,4 +398,4 @@ Todas las demás funcionalidades (`Future`, `Timer`, `Isolate`) son parte de la 
 
 ---
 
-*Proyecto desarrollado por Diego Fernando España Valderrama — Electiva Profesional I, UCEVA 2026*
+*Proyecto desarrollado por Diego Fernando España Valderrama y Santiago González Gómez — Electiva Profesional I, UCEVA 2026*
