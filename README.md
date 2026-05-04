@@ -262,26 +262,21 @@ git checkout -b dev
 git checkout -b feature/proyecto_integrador
 
 # Commits durante el desarrollo
-git commit -m "feat: estructura base StudyManager"
-git commit -m "feat: modelo Tarea y DatabaseService SQLite"
-git commit -m "feat: DashboardView con Skeletonizer"
-git commit -m "feat: TareasView con CRUD completo"
-git commit -m "feat: EnfoqueView con cronómetro Pomodoro"
-git commit -m "feat: EstadisticasView con fl_chart e Isolate"
-git commit -m "chore: bump version 1.0.0+1 — release inicial"
-git commit -m "fix: indicador de versión en Dashboard"
-git commit -m "chore: bump version 1.0.1+2 — actualización incremental"
+git commit -m "Primer commit"
+git commit -m "Reorganizando estructura de carpetas para el PI"
+git commit -m "Nueva lógica principal"
+git commit -m "Cambios para la versión 1.0.1+2"
 
 # Merge feature → dev → main
 git checkout dev
-git merge feature/parcial_flutter_final
+git merge feature/proyecto_integrador
 git checkout main
 git merge dev
 
 # Subir al repositorio
 git push origin main
 git push origin dev
-git push origin feature/parcial_flutter_final
+git push origin feature/proyecto_integrador
 ```
 
 ---
@@ -289,20 +284,20 @@ git push origin feature/parcial_flutter_final
 ## Capturas del panel
 
 ### Firebase App Distribution — Releases
-> 📸 *Insertar captura del panel de Releases mostrando v1.0.0 y v1.0.1*
+> ![alt text](image-3.png)
 
 ### Testers & Groups — QA_Clase
-> 📸 *Insertar captura del grupo QA_Clase con dduran@uceva.edu.co visible*
+> ![alt text](image-1.png)
 
 ### Correo de invitación
-> 📸 *Insertar captura del correo recibido por el tester con el enlace de instalación*
+> ![alt text](image-2.png)
 
 ### App instalada en dispositivo
-> 📸 *Insertar foto/captura de la app abierta en el dispositivo Android físico*
+> ![alt text](image-4.png)
 
 ### Actualización (antes/después)
-> 📸 *Insertar capturas del panel mostrando las dos versiones — evidencia del flujo de actualización*
-
+> ![alt text](image-5.png)
+Es un cambio pequeño debajo del saludo para el ejemplo
 ---
 
 ## Referencias
