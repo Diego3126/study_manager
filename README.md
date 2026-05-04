@@ -1,401 +1,312 @@
-# StudyManager 📚
+# 📚 StudyManager — Distribución con Firebase App Distribution
 
-Aplicación móvil desarrollada en **Flutter** como proyecto de la asignatura **Electiva Profesional I** en la Unidad Central del Valle del Cauca (UCEVA). StudyManager es una agenda académica inteligente que demuestra conceptos fundamentales de programación asíncrona en Dart/Flutter: `Future`, `async/await`, `Timer` e `Isolate`.
+Documentación del proceso de distribución y pruebas de **StudyManager v1.0.1** usando Firebase App Distribution como plataforma de distribución de APK para testers.
 
 ---
 
 ## Tabla de contenidos
 
-1. [Descripción general](#descripción-general)
-2. [Estructura del proyecto](#estructura-del-proyecto)
-3. [Pantallas y flujos](#pantallas-y-flujos)
-4. [Conceptos de asincronía](#conceptos-de-asincronía)
-5. [Cuándo usar cada herramienta](#cuándo-usar-cada-herramienta)
-6. [Navegación con go_router](#navegación-con-go_router)
-7. [Cómo ejecutar el proyecto](#cómo-ejecutar-el-proyecto)
-8. [Dependencias](#dependencias)
+1. [Descripción de la app](#descripción-de-la-app)
+2. [Flujo de distribución](#flujo-de-distribución)
+3. [Publicación — pasos para replicar](#publicación--pasos-para-replicar)
+4. [Versionado](#versionado)
+5. [Formato de Release Notes](#formato-de-release-notes)
+6. [GitFlow](#gitflow)
+7. [Capturas del panel](#capturas-del-panel)
+8. [Referencias](#referencias)
 
 ---
 
-## Descripción general
+## Descripción de la app
 
-StudyManager resuelve el problema de la desorganización académica que enfrentan estudiantes de secundaria y universidad. La app permite registrar tareas, trabajos y exámenes, y organiza las actividades de forma inteligente.
+**StudyManager** es una agenda académica inteligente desarrollada en Flutter para estudiantes de secundaria y universidad. Permite organizar tareas, exámenes y trabajos con sistema de prioridades, modo de enfoque Pomodoro y estadísticas de rendimiento.
 
-En esta versión del proyecto se integran módulos que demuestran el uso de programación asíncrona en Flutter, sin bloquear la interfaz de usuario en ningún momento.
-
-**Público objetivo:** Estudiantes de 13 a 25 años.
-
----
-
-## Estructura del proyecto
-
-```
-study_manager/
-├── lib/
-│   ├── main.dart                        # Punto de entrada de la app
-│   ├── app_router.dart                  # Configuración centralizada de rutas
-│   ├── app_theme.dart                   # Tema visual global
-│   ├── home_screen.dart                 # Pantalla de inicio
-│   │
-│   ├── widgets/
-│   │   ├── base_view.dart               # Componente base reutilizable (AppBar + Drawer)
-│   │   └── custom_drawer.dart           # Menú lateral de navegación
-│   │
-│   ├── paso_parametros/
-│   │   ├── paso_parametros_screen.dart  # Envío de parámetros entre pantallas
-│   │   └── detalle_screen.dart          # Recepción de parámetros
-│   │
-│   ├── ciclo_vida/
-│   │   └── ciclo_vida_screen.dart       # Ciclo de vida de StatefulWidget
-│   │
-│   ├── future/
-│   │   └── future_view.dart             # Asincronía con Future / async / await
-│   │
-│   ├── timer/
-│   │   └── timer_view.dart              # Cronómetro con Timer
-│   │
-│   └── isolate/
-│       └── isolate_view.dart            # Tarea pesada con Isolate
-│
-├── pubspec.yaml                         # Dependencias y metadatos del proyecto
-└── README.md                            # Este archivo
-```
-
-### Rol de cada archivo principal
-
-| Archivo | Qué hace |
+| Campo | Valor |
 |---|---|
-| `main.dart` | Inicializa la app con `MaterialApp.router`, aplica el tema y conecta el router |
-| `app_router.dart` | Define todas las rutas de la app en un solo lugar usando `GoRouter` |
-| `app_theme.dart` | Centraliza colores, tipografía y estilos del AppBar y Drawer |
-| `base_view.dart` | Widget reutilizable que evita repetir Scaffold + AppBar + Drawer en cada pantalla |
-| `custom_drawer.dart` | Menú lateral con acceso a todas las secciones de la app |
+| **Plataforma** | Android |
+| **Framework** | Flutter 3.x / Dart |
+| **Almacenamiento** | SQLite local (sqflite) |
+| **Versión actual** | 1.0.1 (build 2) |
+| **applicationId** | com.example.study_manager |
 
 ---
 
-## Pantallas y flujos
+## Flujo de distribución
 
-### Pantallas disponibles
-
-| Ruta | Pantalla | Descripción |
-|---|---|---|
-| `/` | HomeScreen | Dashboard de bienvenida |
-| `/paso_parametros` | PasoParametrosScreen | Demuestra go, push y replace |
-| `/detalle/:param/:metodo` | DetalleScreen | Recibe parámetros por URL |
-| `/ciclo_vida` | CicloVidaScreen | Muestra initState, setState, dispose |
-| `/future` | FutureView | Carga datos con Future y async/await |
-| `/timer` | TimerView | Cronómetro con Timer |
-| `/isolate` | IsolateView | Tarea pesada en hilo secundario |
-
----
-
-### Flujo 1 — Future / async / await (FutureView)
+El proceso completo desde el código hasta el dispositivo del tester sigue estos pasos:
 
 ```
-Usuario entra a /future
+Código fuente (VS Code)
         │
         ▼
-initState() → obtenerDatos() llamado
+[1] flutter build apk --release
         │
         ▼
-Estado: 'cargando' → UI muestra CircularProgressIndicator
+[2] app-release.apk generado
+    build/app/outputs/flutter-apk/
         │
         ▼
-cargarNombres() → Future.delayed(3s) → datos listos
-        │
-        ├─── Éxito → Estado: 'exito' → UI muestra GridView con 20 nombres
-        │
-        └─── Error → Estado: 'error' → UI muestra mensaje + botón Reintentar
-```
-
-**Orden de ejecución impreso en consola:**
-```
->>> [FutureView] initState — antes de cargar datos
->>> [FutureView] obtenerDatos — estado: cargando
->>> [FutureView] cargarNombres — inicio (esperando 3s)
->>> [FutureView] cargarNombres — datos listos
->>> [FutureView] obtenerDatos — estado: éxito
-```
-
----
-
-### Flujo 2 — Timer / Cronómetro (TimerView)
-
-```
-Estado inicial: 00:00 — Pausado
-        │
-        ▼ [Botón Iniciar]
-Timer.periodic(1s) → _segundos++ → setState() → UI actualiza cada segundo
-        │
-        ├─── [Botón Pausar] → timer.cancel() → UI muestra ⏸ Pausado
-        │          │
-        │          ▼ [Botón Reanudar]
-        │       Timer.periodic nuevo → continúa desde donde pausó
-        │
-        └─── [Botón Reiniciar] → timer.cancel() → _segundos = 0 → 00:00
-        
-Al salir de la pantalla:
-        dispose() → timer?.cancel() → recursos liberados
-```
-
-**Estados del cronómetro:**
-
-| Estado | Botones visibles | Indicador |
-|---|---|---|
-| Inicial (00:00) | Iniciar, Reiniciar | ⏸ Pausado |
-| Corriendo | Pausar, Reiniciar | ▶ Corriendo |
-| Pausado (> 00:00) | Reanudar, Reiniciar | ⏸ Pausado |
-
----
-
-### Flujo 3 — Isolate / Tarea pesada (IsolateView)
-
-```
-Usuario presiona "Ejecutar tarea en segundo plano"
+[3] Firebase App Distribution
+    → Subir APK
+    → Asignar grupo QA_Clase
+    → Agregar Release Notes
+    → Distribuir
         │
         ▼
-UI muestra CircularProgressIndicator (no se bloquea)
+[4] Testers reciben correo de invitación
+    → dduran@uceva.edu.co
         │
         ▼
-Isolate.spawn(_simulacionTareaPesada, receivePort.sendPort)
+[5] Tester instala la app en dispositivo Android
         │
         ▼
-Hilo secundario: suma del 1 al 1,000,000 (tarea CPU-bound)
+[6] Pruebas QA — verificar funcionalidades
         │
         ▼
-Isolate envía resultado por SendPort → hilo principal recibe
+[7] Actualización (1.0.0 → 1.0.1)
+    → Cambiar version en pubspec.yaml
+    → flutter build apk --release
+    → Subir nueva versión a App Distribution
+    → Distribuir al mismo grupo
         │
         ▼
-setState() → UI muestra resultado + Isolate.exit()
-```
-
-**Comunicación entre hilos:**
-```
-Hilo principal                    Isolate (hilo secundario)
-      │                                    │
-      │── Isolate.spawn() ────────────────>│
-      │<─ sendPort del isolate ────────────│
-      │── sendPort.send([datos, reply]) ──>│
-      │                                    │── procesa (suma 1..1,000,000)
-      │<─ replyPort.send(resultado) ───────│
-      │                                    │── Isolate.exit()
-      │── setState() → actualiza UI
+[8] Testers reciben notificación de actualización
 ```
 
 ---
 
-## Conceptos de asincronía
+## Publicación — pasos para replicar
 
-### Future y async/await
+Sigue estos pasos para replicar el proceso de distribución desde cero en el equipo:
 
-Un `Future` representa un valor que estará disponible en el futuro (puede ser datos de una API, lectura de archivos, etc.). `async/await` es la forma más legible de trabajar con `Future` sin anidar callbacks.
+### 1. Preparar el proyecto
 
-```dart
-// Sin async/await (callbacks anidados — difícil de leer)
-cargarDatos().then((datos) {
-  procesarDatos(datos).then((resultado) {
-    mostrarResultado(resultado);
-  });
-});
-
-// Con async/await (secuencial y legible)
-Future<void> cargarYMostrar() async {
-  final datos = await cargarDatos();       // espera sin bloquear la UI
-  final resultado = await procesarDatos(datos);
-  mostrarResultado(resultado);
-}
+Verifica que `pubspec.yaml` tenga la versión correcta:
+```yaml
+version: 1.0.0+1   # versionName+versionCode
 ```
 
-**Cómo funciona en FutureView:**
-```dart
-Future<void> obtenerDatos() async {
-  setState(() => _estado = 'cargando');         // UI muestra spinner
-  try {
-    final datos = await cargarNombres();        // espera 3 segundos
-    setState(() {
-      _nombres = datos;
-      _estado = 'exito';                        // UI muestra GridView
-    });
-  } catch (e) {
-    setState(() => _estado = 'error');          // UI muestra error
-  }
-}
+Verifica que `android/app/src/main/AndroidManifest.xml` tenga el permiso de internet:
+```xml
+<uses-permission android:name="android.permission.INTERNET"/>
 ```
 
----
-
-### Timer
-
-`Timer` de `dart:async` ejecuta una función después de un tiempo determinado. `Timer.periodic` la repite en intervalos regulares.
-
-```dart
-// Ejecutar una vez después de 2 segundos
-Timer(Duration(seconds: 2), () {
-  print('Han pasado 2 segundos');
-});
-
-// Ejecutar cada segundo (cronómetro)
-Timer.periodic(Duration(seconds: 1), (timer) {
-  setState(() => _segundos++);
-});
-
-// Cancelar el timer (importante para liberar recursos)
-timer.cancel();
-```
-
-**Regla fundamental:** siempre cancelar el `Timer` en `dispose()` para evitar memory leaks:
-```dart
-@override
-void dispose() {
-  _timer?.cancel();   // libera el timer al salir de la pantalla
-  super.dispose();
-}
-```
-
----
-
-### Isolate
-
-Un `Isolate` es un hilo de ejecución independiente con su propia memoria. En Dart, el hilo principal (UI thread) no debe ejecutar tareas pesadas porque bloquearía la interfaz. Los `Isolate` permiten ejecutar esas tareas en paralelo.
-
-```dart
-// Sin Isolate — BLOQUEA la UI (incorrecto para tareas pesadas)
-int sumaGrande() {
-  int total = 0;
-  for (int i = 1; i <= 1000000; i++) total += i;
-  return total;  // la UI se congela mientras esto corre
-}
-
-// Con Isolate — NO bloquea la UI (correcto)
-await Isolate.spawn(funcionPesada, receivePort.sendPort);
-final resultado = await receivePort.first;  // UI sigue respondiendo
-```
-
-**Comunicación con mensajes (SendPort / ReceivePort):**
-```dart
-// Los Isolates no comparten memoria, se comunican por mensajes
-static void funcionPesada(SendPort sendPort) {
-  // ejecuta la tarea...
-  sendPort.send('resultado');  // envía el resultado al hilo principal
-}
-```
-
----
-
-## Cuándo usar cada herramienta
-
-| Herramienta | Usar cuando... | Ejemplo típico |
-|---|---|---|
-| `Future` + `async/await` | Se necesita esperar un resultado sin bloquear la UI. La tarea involucra I/O: red, base de datos, archivos. | Llamar una API, leer SharedPreferences, consultar SQLite |
-| `Timer` | Se necesita ejecutar código después de un tiempo o de forma periódica. | Cronómetros, cuenta regresiva, polling, animaciones manuales |
-| `Isolate` | La tarea es intensiva en CPU y tardaría más de unos pocos milisegundos. | Procesamiento de imágenes, cifrado, cálculos matemáticos complejos, parsing de JSON grande |
-| Solo `setState` | La operación es inmediata y no involucra espera ni cálculo pesado. | Cambiar el valor de un contador, mostrar/ocultar un widget |
-
-### Comparación rápida
-
-```
-Tarea de red (API)          → Future + async/await   ✅
-Tarea de archivos           → Future + async/await   ✅
-Cuenta regresiva            → Timer                  ✅
-Suma del 1 al 1,000,000     → Isolate                ✅
-Procesamiento de imagen     → Isolate                ✅
-Cambiar color de un botón   → setState               ✅
-```
-
-### ¿Por qué NO usar Isolate para todo?
-
-Los `Isolate` tienen un costo de creación y no comparten memoria, por lo que para tareas simples de I/O es innecesario y más complejo. `async/await` es suficiente para operaciones de red o archivos porque estas tareas ya son no bloqueantes por naturaleza.
-
----
-
-## Navegación con go_router
-
-Todas las rutas están definidas centralizadamente en `app_router.dart`:
-
-```dart
-final GoRouter appRouter = GoRouter(
-  routes: [
-    GoRoute(path: '/',              builder: (c, s) => const HomeScreen()),
-    GoRoute(path: '/future',        builder: (c, s) => const FutureView()),
-    GoRoute(path: '/timer',         builder: (c, s) => const TimerView()),
-    GoRoute(path: '/isolate',       builder: (c, s) => const IsolateView()),
-    GoRoute(path: '/ciclo_vida',    builder: (c, s) => const CicloVidaScreen()),
-    GoRoute(path: '/paso_parametros', builder: (c, s) => const PasoParametrosScreen()),
-    GoRoute(
-      path: '/detalle/:parametro/:metodo',
-      builder: (c, s) => DetalleScreen(
-        parametro: s.pathParameters['parametro']!,
-        metodoNavegacion: s.pathParameters['metodo']!,
-      ),
-    ),
-  ],
-);
-```
-
-| Método | Comportamiento |
-|---|---|
-| `context.go('/ruta')` | Reemplaza toda la pila — no hay botón atrás |
-| `context.push('/ruta')` | Apila la ruta — el usuario puede volver |
-| `context.replace('/ruta')` | Reemplaza la ruta actual manteniendo el historial previo |
-| `context.pop()` | Vuelve a la pantalla anterior (solo si fue push) |
-
----
-
-## Cómo ejecutar el proyecto
-
-### Requisitos previos
-
-- Flutter SDK 3.x instalado
-- Android Studio con un emulador configurado (API 34 recomendado)
-- VS Code con las extensiones Flutter y Dart
-
-### Pasos
+### 2. Generar el APK de release
 
 ```bash
-# 1. Clonar o abrir el proyecto
-cd study_manager
-
-# 2. Instalar dependencias
-flutter pub get
-
-# 3. Verificar el entorno
-flutter doctor
-
-# 4. Ejecutar la app
-flutter run
+flutter build apk --release
 ```
 
-### Comandos útiles durante el desarrollo
+El APK se genera en:
+```
+build/app/outputs/flutter-apk/app-release.apk
+```
 
+### 3. Configurar Firebase
+
+1. Ir a https://console.firebase.google.com
+2. Crear proyecto → `StudyManager`
+3. Registrar app Android con el `applicationId` de `android/app/build.gradle`
+4. Descargar `google-services.json` → colocar en `android/app/`
+
+### 4. Configurar App Distribution
+
+1. Firebase Console → **App Distribution** → Comenzar
+2. Pestaña **Testers & Groups** → **Add group** → nombre: `QA_Clase`
+3. Agregar testers al grupo con sus correos
+
+### 5. Subir y distribuir el APK
+
+1. Pestaña **Releases** → **Upload** → seleccionar `app-release.apk`
+2. Asignar grupo `QA_Clase`
+3. Escribir Release Notes (ver formato más abajo)
+4. Clic en **Distribute**
+
+### 6. Verificar distribución
+
+- Los testers reciben un correo con enlace de instalación
+- Deben aceptar la invitación y descargar la app
+- La app se instala directamente desde el navegador del dispositivo
+
+### 7. Actualización incremental
+
+Para distribuir una nueva versión:
+```yaml
+# pubspec.yaml — incrementar ambos valores
+version: 1.0.1+2
+```
 ```bash
-r        # Hot Reload — recarga la UI manteniendo el estado
-R        # Hot Restart — reinicia la app completamente
-q        # Salir
+flutter build apk --release
 ```
+Subir el nuevo APK a App Distribution con nuevas Release Notes. Los testers del grupo reciben notificación automáticamente.
 
 ---
 
-## Dependencias
+## Versionado
+
+Flutter usa el formato `versionName+versionCode` en `pubspec.yaml`:
 
 ```yaml
-dependencies:
-  flutter:
-    sdk: flutter
-  go_router: ^14.x.x    # Navegación declarativa
+version: 1.0.1+2
+#        ─────┬─── ─┬─
+#             │     └── versionCode (entero, siempre creciente)
+#             └──────── versionName (visible al usuario: mayor.menor.parche)
 ```
 
-Todas las demás funcionalidades (`Future`, `Timer`, `Isolate`) son parte de la librería estándar de Dart (`dart:async`, `dart:isolate`) y no requieren paquetes adicionales.
+### Convención usada en este proyecto
 
+| Campo | Descripción | Ejemplo |
+|---|---|---|
+| **major** | Cambio grande / incompatible | 2.0.0 |
+| **minor** | Nueva funcionalidad | 1.1.0 |
+| **patch** | Corrección de bugs | 1.0.1 |
+| **versionCode** | Entero siempre creciente, nunca repetir | +2, +3, +4... |
+
+### Historial de versiones
+
+| Versión | versionCode | Fecha | Descripción |
+|---|---|---|---|
+| 1.0.0 | 1 | Mayo 2026 | Primera versión funcional — release inicial |
+| 1.0.1 | 2 | Mayo 2026 | Indicador de versión en Dashboard + correcciones de estilo |
+
+---
+
+## Formato de Release Notes
+
+Se usa el siguiente formato estándar para todas las releases:
+
+```
+Versión: X.X.X (build N)
+Fecha: Mes Año
+Responsable: Nombre del desarrollador
+
+[Nombre App] vX.X.X — Descripción breve del release
+
+Funcionalidades incluidas / Cambios:
+- Descripción de cada cambio o funcionalidad
+
+Instrucciones de prueba:
+1. Paso 1
+2. Paso 2
+3. ...
+
+Incidencias resueltas (si aplica):
+- Descripción del bug y solución aplicada
+```
+
+### Release Notes usadas en este proyecto
+
+**v1.0.0 (build 1):**
+```
+Versión: 1.0.0 (build 1)
+Fecha: Mayo 2026
+Responsable: Diego España
+
+StudyManager v1.0.0 — Primera versión funcional
+
+Funcionalidades incluidas:
+- Dashboard con resumen del día
+- Gestión completa de tareas (crear, editar, eliminar, completar)
+- Organización por materia, tipo y prioridad
+- Modo Enfoque con cronómetro Pomodoro (25/5/15 min)
+- Estadísticas de rendimiento con gráficas
+- Almacenamiento local con SQLite
+
+Instrucciones de prueba:
+1. Instalar la app desde este enlace
+2. Crear al menos 3 tareas con distintas materias y fechas
+3. Probar el modo enfoque iniciando y pausando el cronómetro
+4. Revisar las estadísticas después de marcar tareas como completadas
+```
+
+**v1.0.1 (build 2):**
+```
+Versión: 1.0.1 (build 2)
+Fecha: Mayo 2026
+Responsable: Diego España
+
+StudyManager v1.0.1 — Actualización incremental
+
+Cambios respecto a v1.0.0:
+- Indicador de versión visible en el Dashboard
+- Correcciones menores de estilo
+
+Pruebas QA realizadas:
+✅ Creación y edición de tareas
+✅ Marcado de tareas como completadas
+✅ Modo Enfoque — cronómetro funcional
+✅ Estadísticas actualizadas correctamente
+✅ Navegación entre todas las pantallas
+
+Incidencias encontradas en v1.0.0 y resueltas:
+- Ninguna crítica encontrada en pruebas iniciales
+```
+
+---
+
+## GitFlow
+
+El proyecto sigue la metodología GitFlow con las siguientes ramas:
+
+```
+main ─────────────────────────────────── rama estable
+  └── dev ──────────────────────────────── integración
+        └── feature/proyecto_integrador ── desarrollo
+```
+
+### Flujo seguido
+
+```bash
+# Crear ramas
+git checkout -b dev
+git checkout -b feature/proyecto_integrador
+
+# Commits durante el desarrollo
+git commit -m "Primer commit"
+git commit -m "Reorganizando estructura de carpetas para el PI"
+git commit -m "Nueva lógica principal"
+git commit -m "Cambios para la versión 1.0.1+2"
+
+# Merge feature → dev → main
+git checkout dev
+git merge feature/proyecto_integrador
+git checkout main
+git merge dev
+
+# Subir al repositorio
+git push origin main
+git push origin dev
+git push origin feature/proyecto_integrador
+```
+
+---
+
+## Capturas del panel
+
+### Firebase App Distribution — Releases
+> ![alt text](image-3.png)
+
+### Testers & Groups — QA_Clase
+> ![alt text](image-1.png)
+
+### Correo de invitación
+> ![alt text](image-2.png)
+
+### App instalada en dispositivo
+> ![alt text](image-4.png)
+
+### Actualización (antes/después)
+> ![alt text](image-5.png)
+Es un cambio pequeño debajo del saludo para el ejemplo
 ---
 
 ## Referencias
 
-- [Futures / async/await — dart.dev](https://dart.dev/libraries/async/async-await)
-- [Timer class — api.flutter.dev](https://api.flutter.dev/flutter/dart-async/Timer-class.html)
-- [Isolates en Flutter — docs.flutter.dev](https://docs.flutter.dev/perf/isolates)
-- [go_router — pub.dev](https://pub.dev/packages/go_router)
-- [Widget catalog — docs.flutter.dev](https://docs.flutter.dev/ui/widgets)
+- [Firebase App Distribution — Documentación oficial](https://firebase.google.com/docs/app-distribution?hl=es-419)
+- [Flutter — Deployment Android](https://docs.flutter.dev/deployment/android)
+- [Flutter — Versionado de apps](https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration)
+- [Firebase Console](https://console.firebase.google.com)
 
 ---
 
-*Proyecto desarrollado por Diego Fernando España Valderrama y Santiago González Gómez — Electiva Profesional I, UCEVA 2026*
+*Proyecto desarrollado por Diego Fernando España Valderrama y Santiago Gonzales Gómez · Electiva Profesional I · UCEVA 2026*

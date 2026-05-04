@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
-import 'app_router.dart';
-import 'app_theme.dart';
+import 'routes/app_router.dart';
+import 'themes/app_theme.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const StudyManagerApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class StudyManagerApp extends StatelessWidget {
+  const StudyManagerApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      theme: AppTheme.lightTheme,
-      title: 'StudyManager',
-      routerConfig: appRouter,
+      title:                  'StudyManager',
+      theme:                  AppTheme.theme,
+      routerConfig:           appRouter,
+      debugShowCheckedModeBanner: false,
     );
   }
 }
