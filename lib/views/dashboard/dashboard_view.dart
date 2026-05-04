@@ -28,18 +28,19 @@ class _DashboardViewState extends State<DashboardView> {
   Future<void> _cargar() async {
     setState(() => _cargando = true);
     try {
-      final hoy       = await TareaService().getHoy();
-      final todas     = await TareaService().getAll();
-      final ahora     = DateTime.now();
+      final hoy = await TareaService().getHoy();
+      final todas = await TareaService().getAll();
+      final ahora = DateTime.now();
       final pendientes = todas.where((t) => !t.completada).length;
-      final vencidas   = todas.where((t) =>
-          !t.completada && t.fechaEntrega.isBefore(ahora)).length;
+      final vencidas = todas
+          .where((t) => !t.completada && t.fechaEntrega.isBefore(ahora))
+          .length;
       if (!mounted) return;
       setState(() {
-        _tareasHoy      = hoy;
+        _tareasHoy = hoy;
         _totalPendientes = pendientes;
-        _totalVencidas   = vencidas;
-        _cargando        = false;
+        _totalVencidas = vencidas;
+        _cargando = false;
       });
     } catch (_) {
       if (!mounted) return;
@@ -76,11 +77,17 @@ class _DashboardViewState extends State<DashboardView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Saludo
-              Text(_saludo,
-                  style: const TextStyle(
-                      fontSize: 22, fontWeight: FontWeight.bold)),
-              const Text('¿Qué tienes para hoy?',
-                  style: TextStyle(color: Colors.grey)),
+              Text(
+                _saludo,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Text(
+                'Hola\n ¿Qué pendientes tendrás para hoy?',
+                style: TextStyle(color: Colors.grey, fontSize: 12),
+              ),
               const SizedBox(height: 20),
 
               // Tarjetas resumen
@@ -91,27 +98,27 @@ class _DashboardViewState extends State<DashboardView> {
                     Expanded(
                       child: _ResumenCard(
                         titulo: 'Pendientes',
-                        valor:  '$_totalPendientes',
-                        icono:  Icons.pending_actions,
-                        color:  AppTheme.warning,
+                        valor: '$_totalPendientes',
+                        icono: Icons.pending_actions,
+                        color: AppTheme.warning,
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: _ResumenCard(
                         titulo: 'Vencidas',
-                        valor:  '$_totalVencidas',
-                        icono:  Icons.warning_amber,
-                        color:  AppTheme.danger,
+                        valor: '$_totalVencidas',
+                        icono: Icons.warning_amber,
+                        color: AppTheme.danger,
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: _ResumenCard(
                         titulo: 'Hoy',
-                        valor:  '${_tareasHoy.length}',
-                        icono:  Icons.today,
-                        color:  AppTheme.primary,
+                        valor: '${_tareasHoy.length}',
+                        icono: Icons.today,
+                        color: AppTheme.primary,
                       ),
                     ),
                   ],
@@ -121,18 +128,19 @@ class _DashboardViewState extends State<DashboardView> {
               const SizedBox(height: 24),
 
               // Accesos rápidos
-              const Text('Accesos rápidos',
-                  style: TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold)),
+              const Text(
+                'Accesos rápidos',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
                     child: _AccesoCard(
-                      titulo:  'Mis Tareas',
-                      icono:   Icons.assignment,
-                      color:   AppTheme.primary,
-                      onTap:   () async {
+                      titulo: 'Mis Tareas',
+                      icono: Icons.assignment,
+                      color: AppTheme.primary,
+                      onTap: () async {
                         await context.push('/tareas');
                         _cargar();
                       },
@@ -141,10 +149,10 @@ class _DashboardViewState extends State<DashboardView> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _AccesoCard(
-                      titulo:  'Modo Enfoque',
-                      icono:   Icons.timer,
-                      color:   AppTheme.secondary,
-                      onTap:   () => context.push('/enfoque'),
+                      titulo: 'Modo Enfoque',
+                      icono: Icons.timer,
+                      color: AppTheme.secondary,
+                      onTap: () => context.push('/enfoque'),
                     ),
                   ),
                 ],
@@ -156,9 +164,10 @@ class _DashboardViewState extends State<DashboardView> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Para hoy',
-                      style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Para hoy',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                   TextButton(
                     onPressed: () async {
                       await context.push('/tareas');
@@ -187,54 +196,65 @@ class _DashboardViewState extends State<DashboardView> {
                         ),
                       )
                     : _tareasHoy.isEmpty
-                        ? Container(
-                            padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              color:  Colors.green.shade50,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                  color: Colors.green.shade200),
+                    ? Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.green.shade200),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(
+                              Icons.check_circle,
+                              color: Colors.green,
+                              size: 36,
                             ),
-                            child: const Row(
-                              children: [
-                                Icon(Icons.check_circle,
-                                    color: Colors.green, size: 36),
-                                SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text('¡Sin tareas para hoy!',
-                                          style: TextStyle(
-                                              fontWeight:
-                                                  FontWeight.bold,
-                                              color: Colors.green)),
-                                      Text(
-                                          'Aprovecha para adelantar trabajo',
-                                          style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey)),
-                                    ],
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '¡Sin tareas para hoy!',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.green,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                  Text(
+                                    'Aprovecha para adelantar trabajo',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          )
-                        : Column(
-                            children: _tareasHoy.map((t) => TareaCard(
-                              tarea: t,
-                              onTap: () async {
-                                await context.push('/tareas/${t.id}');
-                                _cargar();
-                              },
-                              onCompletada: (val) async {
-                                await TareaService()
-                                    .marcarCompletada(t.id!, val ?? false);
-                                _cargar();
-                              },
-                            )).toList(),
-                          ),
+                          ],
+                        ),
+                      )
+                    : Column(
+                        children: _tareasHoy
+                            .map(
+                              (t) => TareaCard(
+                                tarea: t,
+                                onTap: () async {
+                                  await context.push('/tareas/${t.id}');
+                                  _cargar();
+                                },
+                                onCompletada: (val) async {
+                                  await TareaService().marcarCompletada(
+                                    t.id!,
+                                    val ?? false,
+                                  );
+                                  _cargar();
+                                },
+                              ),
+                            )
+                            .toList(),
+                      ),
               ),
               const SizedBox(height: 80),
             ],
@@ -246,7 +266,7 @@ class _DashboardViewState extends State<DashboardView> {
           await context.push('/tareas/nueva');
           _cargar();
         },
-        icon:  const Icon(Icons.add),
+        icon: const Icon(Icons.add),
         label: const Text('Nueva tarea'),
       ),
     );
@@ -275,14 +295,18 @@ class _ResumenCard extends StatelessWidget {
           children: [
             Icon(icono, color: color, size: 28),
             const SizedBox(height: 6),
-            Text(valor,
-                style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: color)),
-            Text(titulo,
-                style: const TextStyle(
-                    fontSize: 11, color: Colors.grey)),
+            Text(
+              valor,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+            Text(
+              titulo,
+              style: const TextStyle(fontSize: 11, color: Colors.grey),
+            ),
           ],
         ),
       ),
@@ -319,9 +343,11 @@ class _AccesoCard extends StatelessWidget {
                 child: Icon(icono, color: color, size: 26),
               ),
               const SizedBox(height: 8),
-              Text(titulo,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                  textAlign: TextAlign.center),
+              Text(
+                titulo,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+                textAlign: TextAlign.center,
+              ),
             ],
           ),
         ),
