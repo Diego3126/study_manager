@@ -141,7 +141,7 @@ class _TareaFormViewState extends State<TareaFormView> {
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
-                      value: _materia,
+                      initialValue: _materia,
                       decoration: const InputDecoration(
                         labelText: 'Materia *',
                         prefixIcon: Icon(Icons.book),
@@ -152,7 +152,7 @@ class _TareaFormViewState extends State<TareaFormView> {
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
-                      value: _tipo,
+                      initialValue: _tipo,
                       decoration: const InputDecoration(
                         labelText: 'Tipo *',
                         prefixIcon: Icon(Icons.category),
@@ -163,7 +163,7 @@ class _TareaFormViewState extends State<TareaFormView> {
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
-                      value: _prioridad,
+                      initialValue: _prioridad,
                       decoration: const InputDecoration(
                         labelText: 'Prioridad *',
                         prefixIcon: Icon(Icons.flag),

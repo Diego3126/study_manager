@@ -113,7 +113,7 @@ class _TareasViewState extends State<TareasView>
           child: _cargando
               ? ListView.builder(
                   itemCount: 5,
-                  itemBuilder: (_, __) => Container(
+                  itemBuilder: (_, _) => Container(
                     height: 80,
                     margin: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 5),
