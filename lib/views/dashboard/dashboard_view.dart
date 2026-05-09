@@ -62,6 +62,11 @@ class _DashboardViewState extends State<DashboardView> {
         title: const Text('StudyManager'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.person_outline),
+            tooltip: 'Mi perfil',
+            onPressed: () => context.push('/perfil'),
+          ),
+          IconButton(
             icon: const Icon(Icons.bar_chart),
             tooltip: 'Estadísticas',
             onPressed: () => context.push('/estadisticas'),
