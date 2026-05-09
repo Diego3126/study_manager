@@ -44,14 +44,14 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/tareas/:id',
       builder: (context, state) {
-        final id = int.parse(state.pathParameters['id']!);
+        final id = state.pathParameters['id']!;
         return TareaDetalleView(id: id);
       },
     ),
     GoRoute(
       path: '/tareas/:id/editar',
       builder: (context, state) {
-        final id = int.parse(state.pathParameters['id']!);
+        final id = state.pathParameters['id']!;
         return TareaFormView(id: id);
       },
     ),

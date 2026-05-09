@@ -6,7 +6,7 @@ import '../../themes/app_theme.dart';
 import '../../widgets/estado_widget.dart';
 
 class TareaDetalleView extends StatefulWidget {
-  final int id;
+  final String id;
   const TareaDetalleView({super.key, required this.id});
 
   @override
@@ -139,7 +139,7 @@ class _TareaDetalleViewState extends State<TareaDetalleView> {
                 child: ElevatedButton.icon(
                   onPressed: () async {
                     await TareaService().marcarCompletada(
-                        _tarea!.id!, !_tarea!.completada);
+                        _tarea!.firestoreId!, !_tarea!.completada);
                     _cargar();
                   },
                   icon: Icon(_tarea!.completada

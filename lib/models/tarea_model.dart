@@ -1,5 +1,5 @@
 class Tarea {
-  final int? id;
+  final String? firestoreId;  // ID de Firestore (reemplaza el int de SQLite)
   final String titulo;
   final String descripcion;
   final String materia;
@@ -10,7 +10,7 @@ class Tarea {
   final DateTime creadaEn;
 
   Tarea({
-    this.id,
+    this.firestoreId,
     required this.titulo,
     required this.descripcion,
     required this.materia,
@@ -21,39 +21,37 @@ class Tarea {
     DateTime? creadaEn,
   }) : creadaEn = creadaEn ?? DateTime.now();
 
-  // Para guardar en SQLite
-  Map<String, dynamic> toMap() {
+  // Para guardar en Firestore
+  Map<String, dynamic> toFirestore() {
     return {
-      'id':            id,
       'titulo':        titulo,
       'descripcion':   descripcion,
       'materia':       materia,
       'tipo':          tipo,
       'prioridad':     prioridad,
       'fechaEntrega':  fechaEntrega.toIso8601String(),
-      'completada':    completada ? 1 : 0,
+      'completada':    completada,
       'creadaEn':      creadaEn.toIso8601String(),
     };
   }
 
-  // Para leer desde SQLite
-  factory Tarea.fromMap(Map<String, dynamic> map) {
+  // Para leer desde Firestore
+  factory Tarea.fromFirestore(String id, Map<String, dynamic> data) {
     return Tarea(
-      id:           map['id'],
-      titulo:       map['titulo']      ?? '',
-      descripcion:  map['descripcion'] ?? '',
-      materia:      map['materia']     ?? '',
-      tipo:         map['tipo']        ?? 'Tarea',
-      prioridad:    map['prioridad']   ?? 'Media',
-      fechaEntrega: DateTime.parse(map['fechaEntrega']),
-      completada:   map['completada']  == 1,
-      creadaEn:     DateTime.parse(map['creadaEn']),
+      firestoreId:  id,
+      titulo:       data['titulo']        ?? '',
+      descripcion:  data['descripcion']   ?? '',
+      materia:      data['materia']       ?? '',
+      tipo:         data['tipo']          ?? 'Tarea',
+      prioridad:    data['prioridad']     ?? 'Media',
+      fechaEntrega: DateTime.parse(data['fechaEntrega']),
+      completada:   data['completada']    ?? false,
+      creadaEn:     DateTime.parse(data['creadaEn']),
     );
   }
 
-  // Para crear una copia con cambios
   Tarea copyWith({
-    int? id,
+    String? firestoreId,
     String? titulo,
     String? descripcion,
     String? materia,
@@ -61,9 +59,10 @@ class Tarea {
     String? prioridad,
     DateTime? fechaEntrega,
     bool? completada,
+    DateTime? creadaEn,
   }) {
     return Tarea(
-      id:           id           ?? this.id,
+      firestoreId:  firestoreId  ?? this.firestoreId,
       titulo:       titulo       ?? this.titulo,
       descripcion:  descripcion  ?? this.descripcion,
       materia:      materia      ?? this.materia,

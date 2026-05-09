@@ -74,12 +74,12 @@ class _TareasViewState extends State<TareasView>
         itemBuilder: (context, i) => TareaCard(
           tarea: tareas[i],
           onTap: () async {
-            await context.push('/tareas/${tareas[i].id}');
+            await context.push('/tareas/${tareas[i].firestoreId}');
             _cargar();
           },
           onCompletada: (val) async {
             await TareaService()
-                .marcarCompletada(tareas[i].id!, val ?? false);
+                .marcarCompletada(tareas[i].firestoreId!, val ?? false);
             _cargar();
           },
         ),
