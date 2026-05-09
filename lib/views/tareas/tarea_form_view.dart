@@ -6,7 +6,7 @@ import '../../services/tarea_service.dart';
 import '../../themes/app_theme.dart';
 
 class TareaFormView extends StatefulWidget {
-  final int? id;
+  final String? id;
   const TareaFormView({super.key, this.id});
 
   @override
@@ -68,7 +68,7 @@ class _TareaFormViewState extends State<TareaFormView> {
     setState(() => _guardando = true);
     try {
       final tarea = Tarea(
-        id:           widget.id,
+        firestoreId:  widget.id,
         titulo:       _titulo.text.trim(),
         descripcion:  _descripcion.text.trim(),
         materia:      _materia,
