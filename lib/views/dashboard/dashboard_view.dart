@@ -241,14 +241,12 @@ class _DashboardViewState extends State<DashboardView> {
                               (t) => TareaCard(
                                 tarea: t,
                                 onTap: () async {
-                                  await context.push('/tareas/${t.id}');
+                                  await context.push('/tareas/${t.firestoreId}');
                                   _cargar();
                                 },
                                 onCompletada: (val) async {
-                                  await TareaService().marcarCompletada(
-                                    t.id!,
-                                    val ?? false,
-                                  );
+                                  await TareaService()
+                                      .marcarCompletada(t.firestoreId!, val ?? false);
                                   _cargar();
                                 },
                               ),
