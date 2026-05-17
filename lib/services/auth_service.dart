@@ -21,6 +21,7 @@ class AuthService {
     required String nombre,
     required String email,
     required String password,
+    String universidad = '',
   }) async {
     final credential = await _auth.createUserWithEmailAndPassword(
       email: email, password: password,
@@ -34,7 +35,7 @@ class AuthService {
       'telefono':    '',
       'carrera':     '',
       'semestre':    '',
-      'universidad': '',
+      'universidad': universidad,
       'creadoEn':    DateTime.now().toIso8601String(),
     });
 
