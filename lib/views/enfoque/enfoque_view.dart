@@ -7,14 +7,13 @@ import '../../services/tarea_service.dart';
 import '../../themes/app_theme.dart';
 
 // ══════════════════════════════════════════════════════════════════════════════
-// MODELO DE SESIÓN KANBAN
+// MODELO KANBAN
 // ══════════════════════════════════════════════════════════════════════════════
 enum KanbanEstado { porHacer, enProgreso, finalizado }
 
 class KanbanTarea {
   final Tarea tarea;
   KanbanEstado estado;
-
   KanbanTarea({required this.tarea, this.estado = KanbanEstado.porHacer});
 }
 
@@ -23,13 +22,12 @@ class KanbanTarea {
 // ══════════════════════════════════════════════════════════════════════════════
 class EnfoqueView extends StatefulWidget {
   const EnfoqueView({super.key});
-
   @override
   State<EnfoqueView> createState() => _EnfoqueViewState();
 }
 
 class _EnfoqueViewState extends State<EnfoqueView>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late TabController _tabController;
 
   // Kanban
@@ -37,7 +35,7 @@ class _EnfoqueViewState extends State<EnfoqueView>
   bool _cargandoTareas = true;
   bool _sesionIniciada = false;
 
-  // Timer Pomodoro
+  // Timer — Bug 1 fix: guardamos timestamp de inicio
   static const Map<String, int> _modos = {
     'Enfoque': 25 * 60,
     'Descanso corto': 5 * 60,
@@ -48,22 +46,62 @@ class _EnfoqueViewState extends State<EnfoqueView>
   bool _corriendo = false;
   int _sesiones = 0;
   Timer? _timer;
+  DateTime? _tiempoInicio; // momento exacto en que inició el timer
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this); // Bug 1 fix
     _tabController = TabController(length: 2, vsync: this);
     _cargarTareas();
+    _cargarSesiones();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _tabController.dispose();
     super.dispose();
   }
 
-  // ── Cargar tareas pendientes ────────────────────────────────────────────────
+  // ── Bug 1 fix: detectar cuando la app vuelve al primer plano ──────────────
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed &&
+        _corriendo &&
+        _tiempoInicio != null) {
+      // Calcular cuánto tiempo pasó realmente
+      final ahora = DateTime.now();
+      final transcurrido = ahora.difference(_tiempoInicio!).inSeconds;
+      final segundosOriginales = _modos[_modoActual]!;
+      final tiempoUsado = transcurrido;
+
+      _timer?.cancel();
+
+      final nuevosSegundos = segundosOriginales - tiempoUsado;
+
+      if (nuevosSegundos <= 0) {
+        // El tiempo ya terminó mientras la pantalla estaba apagada
+        setState(() {
+          _segundos = 0;
+          _corriendo = false;
+        });
+        if (_modoActual == 'Enfoque') {
+          setState(() => _sesiones++);
+          _mostrarResultados();
+        } else {
+          _mostrarSnack('¡Descanso terminado! A enfocarse 💪');
+        }
+      } else {
+        // Continuar desde donde quedó
+        setState(() => _segundos = nuevosSegundos);
+        _iniciarTimer();
+      }
+    }
+  }
+
+  // ── Cargar tareas ──────────────────────────────────────────────────────────
   Future<void> _cargarTareas() async {
     setState(() => _cargandoTareas = true);
     try {
@@ -78,12 +116,42 @@ class _EnfoqueViewState extends State<EnfoqueView>
     }
   }
 
-  // ── Mover tarea entre columnas ─────────────────────────────────────────────
-  void _moverTarea(KanbanTarea kt, KanbanEstado nuevoEstado) {
-    setState(() => kt.estado = nuevoEstado);
+  // ── Bug 3 fix: cargar sesiones desde Firestore ────────────────────────────
+  Future<void> _cargarSesiones() async {
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) return;
+      final snap = await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(uid)
+          .collection('sesiones_pomodoro')
+          .get();
+      if (!mounted) return;
+      setState(() => _sesiones = snap.docs.length);
+    } catch (_) {}
   }
 
-  // ── Getters por columna ────────────────────────────────────────────────────
+  // ── Mover tarea entre columnas ─────────────────────────────────────────────
+  void _moverTarea(KanbanTarea kt, KanbanEstado nuevoEstado) async {
+    setState(() => kt.estado = nuevoEstado);
+
+    // Bug 2 fix: si se mueve a finalizado → marcar completada en Firestore
+    if (nuevoEstado == KanbanEstado.finalizado) {
+      try {
+        await TareaService().marcarCompletada(kt.tarea.firestoreId!, true);
+      } catch (_) {}
+    }
+
+    // Bug 2 fix: si se regresa de finalizado → desmarcar en Firestore
+    if (kt.estado == KanbanEstado.finalizado &&
+        nuevoEstado != KanbanEstado.finalizado) {
+      try {
+        await TareaService().marcarCompletada(kt.tarea.firestoreId!, false);
+      } catch (_) {}
+    }
+  }
+
+  // ── Getters columnas ───────────────────────────────────────────────────────
   List<KanbanTarea> get _porHacer =>
       _kanbanTareas.where((k) => k.estado == KanbanEstado.porHacer).toList();
   List<KanbanTarea> get _enProgreso =>
@@ -92,12 +160,15 @@ class _EnfoqueViewState extends State<EnfoqueView>
       _kanbanTareas.where((k) => k.estado == KanbanEstado.finalizado).toList();
 
   // ── Timer ──────────────────────────────────────────────────────────────────
-  void _iniciar() {
-    if (!_sesionIniciada) setState(() => _sesionIniciada = true);
+  void _iniciarTimer() {
+    _tiempoInicio = DateTime.now().subtract(
+      Duration(seconds: _modos[_modoActual]! - _segundos),
+    );
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (_segundos == 0) {
         _timer?.cancel();
         setState(() => _corriendo = false);
+        _tiempoInicio = null;
         if (_modoActual == 'Enfoque') {
           setState(() => _sesiones++);
           _mostrarResultados();
@@ -108,16 +179,26 @@ class _EnfoqueViewState extends State<EnfoqueView>
         setState(() => _segundos--);
       }
     });
+  }
+
+  void _iniciar() {
+    if (!_sesionIniciada) setState(() => _sesionIniciada = true);
+    _tiempoInicio = DateTime.now().subtract(
+      Duration(seconds: _modos[_modoActual]! - _segundos),
+    );
+    _iniciarTimer();
     setState(() => _corriendo = true);
   }
 
   void _pausar() {
     _timer?.cancel();
+    _tiempoInicio = null;
     setState(() => _corriendo = false);
   }
 
   void _reiniciar() {
     _timer?.cancel();
+    _tiempoInicio = null;
     setState(() {
       _segundos = _modos[_modoActual]!;
       _corriendo = false;
@@ -126,6 +207,7 @@ class _EnfoqueViewState extends State<EnfoqueView>
 
   void _cambiarModo(String modo) {
     _timer?.cancel();
+    _tiempoInicio = null;
     setState(() {
       _modoActual = modo;
       _segundos = _modos[modo]!;
@@ -140,7 +222,7 @@ class _EnfoqueViewState extends State<EnfoqueView>
     );
   }
 
-  // ── Mostrar resultados del Pomodoro ───────────────────────────────────────
+  // ── Resultados del Pomodoro ────────────────────────────────────────────────
   void _mostrarResultados() {
     final enProgreso = _enProgreso.length;
     final finalizado = _finalizado.length;
@@ -163,12 +245,12 @@ class _EnfoqueViewState extends State<EnfoqueView>
       emoji = '💪';
     } else if (finalizado > 0) {
       mensaje =
-          'Completaste algunas tareas. Intenta enfocarte en menos tareas en la próxima sesión.';
+          'Completaste algunas tareas. Intenta enfocarte en menos tareas la próxima sesión.';
       colorMensaje = Colors.orange;
       emoji = '📝';
     } else {
       mensaje =
-          'Esta vez fue difícil. Recuerda poner menos tareas en "En progreso" para la próxima sesión.';
+          'Esta vez fue difícil. Recuerda poner menos tareas en "En progreso" la próxima vez.';
       colorMensaje = Colors.red;
       emoji = '💡';
     }
@@ -181,7 +263,6 @@ class _EnfoqueViewState extends State<EnfoqueView>
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Gráfica simple de productividad
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -206,7 +287,6 @@ class _EnfoqueViewState extends State<EnfoqueView>
               ],
             ),
             const SizedBox(height: 16),
-            // Barra de progreso
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: LinearProgressIndicator(
@@ -257,7 +337,7 @@ class _EnfoqueViewState extends State<EnfoqueView>
     );
   }
 
-  // ── Guardar sesión en Firestore ────────────────────────────────────────────
+  // ── Guardar sesión ─────────────────────────────────────────────────────────
   Future<void> _guardarSesion(
     int finalizadas,
     int enProgreso,
@@ -277,6 +357,8 @@ class _EnfoqueViewState extends State<EnfoqueView>
             'productividad': productividad,
             'sesiones': _sesiones,
           });
+      // Bug 3 fix: incrementar y recargar desde Firestore
+      await _cargarSesiones();
     } catch (_) {}
   }
 
@@ -287,11 +369,12 @@ class _EnfoqueViewState extends State<EnfoqueView>
         kt.estado = KanbanEstado.porHacer;
       }
       _sesionIniciada = false;
-      _sesiones = 0;
       _segundos = _modos[_modoActual]!;
       _corriendo = false;
+      _tiempoInicio = null;
     });
     _timer?.cancel();
+    _cargarTareas(); // Bug 2 fix: recargar tareas desde Firestore
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
@@ -350,7 +433,6 @@ class _EnfoqueViewState extends State<EnfoqueView>
     if (_cargandoTareas) {
       return const Center(child: CircularProgressIndicator());
     }
-
     if (_kanbanTareas.isEmpty) {
       return Center(
         child: Column(
@@ -366,11 +448,6 @@ class _EnfoqueViewState extends State<EnfoqueView>
               'No tienes tareas pendientes',
               style: TextStyle(color: Colors.grey, fontSize: 16),
             ),
-            const SizedBox(height: 8),
-            const Text(
-              '¡Crea tareas primero para organizar tu sesión!',
-              style: TextStyle(color: Colors.grey),
-            ),
             const SizedBox(height: 20),
             ElevatedButton.icon(
               onPressed: _cargarTareas,
@@ -384,7 +461,6 @@ class _EnfoqueViewState extends State<EnfoqueView>
 
     return Column(
       children: [
-        // Banner de instrucción
         if (!_sesionIniciada)
           Container(
             padding: const EdgeInsets.all(10),
@@ -402,8 +478,6 @@ class _EnfoqueViewState extends State<EnfoqueView>
               ],
             ),
           ),
-
-        // Tablero Kanban horizontal
         Expanded(
           child: Row(
             children: [
@@ -434,8 +508,6 @@ class _EnfoqueViewState extends State<EnfoqueView>
             ],
           ),
         ),
-
-        // Botón ir al Pomodoro
         if (_enProgreso.isNotEmpty)
           Padding(
             padding: const EdgeInsets.all(12),
@@ -503,7 +575,6 @@ class _EnfoqueViewState extends State<EnfoqueView>
               ),
             ),
           ),
-
           const SizedBox(height: 24),
 
           // Círculo de progreso
@@ -538,7 +609,6 @@ class _EnfoqueViewState extends State<EnfoqueView>
               ),
             ],
           ),
-
           const SizedBox(height: 24),
 
           // Botones
@@ -591,10 +661,9 @@ class _EnfoqueViewState extends State<EnfoqueView>
               ),
             ],
           ),
-
           const SizedBox(height: 20),
 
-          // Sesiones completadas
+          // Sesiones completadas — Bug 3 fix: muestra _sesiones desde Firestore
           Card(
             child: Padding(
               padding: const EdgeInsets.all(14),
@@ -608,7 +677,7 @@ class _EnfoqueViewState extends State<EnfoqueView>
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '$_sesiones sesión${_sesiones != 1 ? 'es' : ''} completada${_sesiones != 1 ? 's' : ''}',
+                    '$_sesiones sesión${_sesiones != 1 ? 'es' : ''} completada${_sesiones != 1 ? 's' : ''} en total',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -618,10 +687,9 @@ class _EnfoqueViewState extends State<EnfoqueView>
               ),
             ),
           ),
-
           const SizedBox(height: 12),
 
-          // Resumen de tareas de la sesión actual
+          // Resumen sesión actual
           if (_sesionIniciada) ...[
             Card(
               child: Padding(
@@ -663,7 +731,6 @@ class _EnfoqueViewState extends State<EnfoqueView>
             ),
           ],
 
-          // Botón ver resultados manualmente
           if (_sesionIniciada && _finalizado.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 12),
@@ -719,7 +786,6 @@ class _KanbanColumna extends StatelessWidget {
             ),
             child: Column(
               children: [
-                // Header columna
                 Container(
                   padding: const EdgeInsets.symmetric(
                     vertical: 10,
@@ -770,8 +836,6 @@ class _KanbanColumna extends StatelessWidget {
                     ],
                   ),
                 ),
-
-                // Tareas de la columna
                 Expanded(
                   child: tareas.isEmpty
                       ? Center(
@@ -805,7 +869,6 @@ class _KanbanColumna extends StatelessWidget {
 class _KanbanCard extends StatelessWidget {
   final KanbanTarea kt;
   final Color color;
-
   const _KanbanCard({required this.kt, required this.color});
 
   @override
@@ -929,7 +992,6 @@ class _MiniStat extends StatelessWidget {
   final String label;
   final String valor;
   final Color color;
-
   const _MiniStat(this.label, this.valor, this.color);
 
   @override
