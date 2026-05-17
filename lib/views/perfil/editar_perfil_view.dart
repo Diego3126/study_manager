@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../models/universidad_model.dart';
 import '../../models/usuario_model.dart';
 import '../../services/auth_service.dart';
+import '../../services/universidad_service.dart';
 import '../../themes/app_theme.dart';
 
 class EditarPerfilView extends StatefulWidget {
@@ -20,17 +22,22 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
   final _semestre    = TextEditingController();
   final _universidad = TextEditingController();
 
-  // Campos de contraseña
-  final _passActual  = TextEditingController();
-  final _passNuevo   = TextEditingController();
-  final _passConfirm = TextEditingController();
-  bool _cambiarPass  = false;
-  bool _verPassActual = false;
-  bool _verPassNuevo  = false;
+  // Contraseña
+  final _passActual   = TextEditingController();
+  final _passNuevo    = TextEditingController();
+  final _passConfirm  = TextEditingController();
+  bool  _cambiarPass  = false;
+  bool  _verPassActual = false;
+  bool  _verPassNuevo  = false;
 
+  // Estado
   bool     _cargando  = true;
   bool     _guardando = false;
   Usuario? _usuario;
+
+  // Universidades
+  List<Universidad> _universidades = [];
+  bool              _cargandoUnis  = false;
 
   @override
   void initState() {
@@ -40,6 +47,8 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
 
   Future<void> _cargar() async {
     setState(() => _cargando = true);
+
+    // Cargar perfil del usuario
     final u = await AuthService().getPerfil();
     if (!mounted) return;
     if (u != null) {
@@ -50,18 +59,24 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
       _semestre.text    = u.semestre;
       _universidad.text = u.universidad;
     }
+
+    // Cargar universidades
+    setState(() => _cargandoUnis = true);
+    final unis = await UniversidadService().getAll();
+    if (!mounted) return;
+
     setState(() {
-      _usuario  = u;
-      _cargando = false;
+      _usuario       = u;
+      _cargando      = false;
+      _universidades = unis;
+      _cargandoUnis  = false;
     });
   }
 
   Future<void> _guardar() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _guardando = true);
-
     try {
-      // Actualizar datos del perfil
       final actualizado = _usuario!.copyWith(
         nombre:      _nombre.text.trim(),
         email:       _email.text.trim(),
@@ -72,7 +87,6 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
       );
       await AuthService().actualizarPerfil(actualizado);
 
-      // Cambiar contraseña si se solicitó
       if (_cambiarPass && _passNuevo.text.isNotEmpty) {
         await AuthService().cambiarPassword(
           passwordActual: _passActual.text,
@@ -157,31 +171,33 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
                     ),
                     const SizedBox(height: 24),
 
-                    // ── Información personal ──────────────────────────────
+                    // ── Información personal ──────────────────────────
                     _Seccion(titulo: 'Información personal'),
                     TextFormField(
                       controller: _nombre,
                       decoration: const InputDecoration(
-                        labelText:   'Nombre completo *',
-                        prefixIcon:  Icon(Icons.person_outline),
+                        labelText:  'Nombre completo *',
+                        prefixIcon: Icon(Icons.person_outline),
                       ),
                       validator: (v) => v == null || v.isEmpty
                           ? 'Campo requerido' : null,
                     ),
                     const SizedBox(height: 12),
+
                     TextFormField(
-                      controller: _email,
+                      controller:   _email,
                       decoration: const InputDecoration(
-                        labelText:   'Correo electrónico *',
-                        prefixIcon:  Icon(Icons.email_outlined),
+                        labelText:  'Correo electrónico *',
+                        prefixIcon: Icon(Icons.email_outlined),
                       ),
                       keyboardType: TextInputType.emailAddress,
                       validator: (v) => v == null || v.isEmpty
                           ? 'Campo requerido' : null,
                     ),
                     const SizedBox(height: 12),
+
                     TextFormField(
-                      controller: _telefono,
+                      controller:   _telefono,
                       decoration: const InputDecoration(
                         labelText:  'Teléfono',
                         prefixIcon: Icon(Icons.phone_outlined),
@@ -190,7 +206,7 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
                     ),
                     const SizedBox(height: 20),
 
-                    // ── Información académica ─────────────────────────────
+                    // ── Información académica ─────────────────────────
                     _Seccion(titulo: 'Información académica'),
                     TextFormField(
                       controller: _carrera,
@@ -200,8 +216,9 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
                       ),
                     ),
                     const SizedBox(height: 12),
+
                     TextFormField(
-                      controller: _semestre,
+                      controller:   _semestre,
                       decoration: const InputDecoration(
                         labelText:  'Semestre',
                         prefixIcon: Icon(Icons.numbers_outlined),
@@ -209,22 +226,57 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
                       keyboardType: TextInputType.number,
                     ),
                     const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _universidad,
-                      decoration: const InputDecoration(
-                        labelText:  'Universidad',
-                        prefixIcon: Icon(Icons.account_balance_outlined),
-                      ),
-                    ),
+
+                    // Selector de universidad
+                    _cargandoUnis
+                        ? const Center(child: CircularProgressIndicator())
+                        : _universidades.isEmpty
+                            ? TextFormField(
+                                controller: _universidad,
+                                decoration: const InputDecoration(
+                                  labelText:  'Universidad',
+                                  prefixIcon: Icon(
+                                      Icons.account_balance_outlined),
+                                  hintText:
+                                      'No hay universidades registradas aún',
+                                ),
+                              )
+                            : DropdownButtonFormField<String>(
+                                value: _universidad.text.isEmpty
+                                    ? null
+                                    : _universidades.any((u) =>
+                                            u.nombre == _universidad.text)
+                                        ? _universidad.text
+                                        : null,
+                                decoration: const InputDecoration(
+                                  labelText:  'Universidad',
+                                  prefixIcon: Icon(
+                                      Icons.account_balance_outlined),
+                                ),
+                                hint: const Text(
+                                    'Selecciona tu universidad'),
+                                items: _universidades
+                                    .map((u) => DropdownMenuItem(
+                                          value: u.nombre,
+                                          child: Text(u.nombre,
+                                              overflow:
+                                                  TextOverflow.ellipsis),
+                                        ))
+                                    .toList(),
+                                onChanged: (v) => setState(
+                                    () => _universidad.text = v ?? ''),
+                              ),
                     const SizedBox(height: 20),
 
-                    // ── Cambiar contraseña ────────────────────────────────
+                    // ── Seguridad ─────────────────────────────────────
                     _Seccion(titulo: 'Seguridad'),
                     SwitchListTile(
                       title:    const Text('Cambiar contraseña'),
-                      subtitle: const Text('Activa para establecer una nueva'),
-                      value:    _cambiarPass,
-                      onChanged:(v) => setState(() => _cambiarPass = v),
+                      subtitle: const Text(
+                          'Activa para establecer una nueva'),
+                      value:       _cambiarPass,
+                      onChanged:   (v) =>
+                          setState(() => _cambiarPass = v),
                       activeColor: AppTheme.primary,
                     ),
 
@@ -240,13 +292,14 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
                             icon: Icon(_verPassActual
                                 ? Icons.visibility_off
                                 : Icons.visibility),
-                            onPressed: () => setState(
-                                () => _verPassActual = !_verPassActual),
+                            onPressed: () => setState(() =>
+                                _verPassActual = !_verPassActual),
                           ),
                         ),
                         validator: _cambiarPass
                             ? (v) => v == null || v.isEmpty
-                                ? 'Ingresa tu contraseña actual' : null
+                                ? 'Ingresa tu contraseña actual'
+                                : null
                             : null,
                       ),
                       const SizedBox(height: 12),
@@ -260,8 +313,8 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
                             icon: Icon(_verPassNuevo
                                 ? Icons.visibility_off
                                 : Icons.visibility),
-                            onPressed: () => setState(
-                                () => _verPassNuevo = !_verPassNuevo),
+                            onPressed: () => setState(() =>
+                                _verPassNuevo = !_verPassNuevo),
                           ),
                         ),
                         validator: _cambiarPass
@@ -301,16 +354,19 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
                       onPressed: _guardando ? null : _guardar,
                       icon: _guardando
                           ? const SizedBox(
-                              width: 18, height: 18,
+                              width:  18,
+                              height: 18,
                               child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.white))
+                                  strokeWidth: 2,
+                                  color:       Colors.white))
                           : const Icon(Icons.save_outlined),
                       label: Text(_guardando
                           ? 'Guardando...' : 'Guardar cambios'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primary,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 14),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -332,7 +388,7 @@ class _Seccion extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
         titulo,
-        style: TextStyle(
+        style: const TextStyle(
           fontSize:   13,
           fontWeight: FontWeight.bold,
           color:      AppTheme.primary,
