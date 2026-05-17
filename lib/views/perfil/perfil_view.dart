@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../models/usuario_model.dart';
 import '../../services/auth_service.dart';
 import '../../themes/app_theme.dart';
 
@@ -11,8 +12,8 @@ class PerfilView extends StatefulWidget {
 }
 
 class _PerfilViewState extends State<PerfilView> {
-  bool _cargando = true;
-  Map<String, String?> _datos = {};
+  bool     _cargando = true;
+  Usuario? _usuario;
 
   @override
   void initState() {
@@ -22,10 +23,10 @@ class _PerfilViewState extends State<PerfilView> {
 
   Future<void> _cargar() async {
     setState(() => _cargando = true);
-    final datos = await AuthService().getDatosLocales();
+    final u = await AuthService().getPerfil();
     if (!mounted) return;
     setState(() {
-      _datos    = datos;
+      _usuario  = u;
       _cargando = false;
     });
   }
@@ -34,7 +35,7 @@ class _PerfilViewState extends State<PerfilView> {
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Cerrar sesión'),
+        title:   const Text('Cerrar sesión'),
         content: const Text('¿Estás seguro de que quieres cerrar sesión?'),
         actions: [
           TextButton(
@@ -55,240 +56,172 @@ class _PerfilViewState extends State<PerfilView> {
     context.go('/login');
   }
 
-  String _truncarToken(String? token) {
-    if (token == null || token.isEmpty) return 'Sin token';
-    if (token.length <= 40) return token;
-    return '${token.substring(0, 20)}...${token.substring(token.length - 20)}';
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mi Perfil'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _cargar,
-            tooltip: 'Actualizar',
-          ),
+          if (_usuario != null)
+            IconButton(
+              icon:    const Icon(Icons.edit_outlined),
+              tooltip: 'Editar perfil',
+              onPressed: () async {
+                await context.push('/perfil/editar');
+                _cargar();
+              },
+            ),
         ],
       ),
       body: _cargando
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Avatar y nombre
-                  Center(
+          : _usuario == null
+              ? const Center(child: Text('No se pudo cargar el perfil'))
+              : RefreshIndicator(
+                  onRefresh: _cargar,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
                     child: Column(
                       children: [
+                        // Avatar
                         CircleAvatar(
-                          radius: 40,
+                          radius:          48,
                           backgroundColor: AppTheme.primary,
                           child: Text(
-                            (_datos['nombre'] ?? 'U')
-                                .substring(0, 1)
-                                .toUpperCase(),
+                            _usuario!.nombre.isNotEmpty
+                                ? _usuario!.nombre[0].toUpperCase()
+                                : 'U',
                             style: const TextStyle(
-                                fontSize: 36,
-                                color: Colors.white,
+                                fontSize:   42,
+                                color:      Colors.white,
                                 fontWeight: FontWeight.bold),
                           ),
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          _datos['nombre'] ?? 'Usuario',
+                          _usuario!.nombre,
                           style: const TextStyle(
-                              fontSize: 22,
+                              fontSize:   22,
                               fontWeight: FontWeight.bold),
                         ),
                         Text(
-                          _datos['email'] ?? '',
+                          _usuario!.email,
                           style: const TextStyle(color: Colors.grey),
                         ),
-                      ],
-                    ),
-                  ),
+                        const SizedBox(height: 24),
 
-                  const SizedBox(height: 24),
-
-                  // Estado de sesión
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: _datos['token'] != null
-                          ? Colors.green.shade50
-                          : Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: _datos['token'] != null
-                            ? Colors.green.shade300
-                            : Colors.red.shade300,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          _datos['token'] != null
-                              ? Icons.verified_user
-                              : Icons.no_accounts,
-                          color: _datos['token'] != null
-                              ? Colors.green
-                              : Colors.red,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          _datos['token'] != null
-                              ? 'Sesión activa — Token presente'
-                              : 'Sin token — Sesión no iniciada',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: _datos['token'] != null
-                                ? Colors.green.shade700
-                                : Colors.red.shade700,
+                        // Tarjeta de información
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(4),
+                            child: Column(
+                              children: [
+                                _InfoTile(
+                                  icono: Icons.person_outline,
+                                  label: 'Nombre',
+                                  valor: _usuario!.nombre,
+                                ),
+                                _InfoTile(
+                                  icono: Icons.email_outlined,
+                                  label: 'Correo',
+                                  valor: _usuario!.email,
+                                ),
+                                _InfoTile(
+                                  icono: Icons.lock_outline,
+                                  label: 'Contraseña',
+                                  valor: '••••••••',
+                                ),
+                                _InfoTile(
+                                  icono: Icons.phone_outlined,
+                                  label: 'Teléfono',
+                                  valor: _usuario!.telefono.isEmpty
+                                      ? 'No registrado'
+                                      : _usuario!.telefono,
+                                ),
+                                _InfoTile(
+                                  icono: Icons.school_outlined,
+                                  label: 'Carrera',
+                                  valor: _usuario!.carrera.isEmpty
+                                      ? 'No registrada'
+                                      : _usuario!.carrera,
+                                ),
+                                _InfoTile(
+                                  icono: Icons.numbers_outlined,
+                                  label: 'Semestre',
+                                  valor: _usuario!.semestre.isEmpty
+                                      ? 'No registrado'
+                                      : _usuario!.semestre,
+                                ),
+                                _InfoTile(
+                                  icono:    Icons.account_balance_outlined,
+                                  label:    'Universidad',
+                                  valor:    _usuario!.universidad.isEmpty
+                                      ? 'No registrada'
+                                      : _usuario!.universidad,
+                                  esUltimo: true,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
+
+                        const SizedBox(height: 24),
+
+                        // Botón cerrar sesión
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: _cerrarSesion,
+                            icon:  const Icon(Icons.logout,
+                                color: Colors.red),
+                            label: const Text('Cerrar sesión',
+                                style: TextStyle(color: Colors.red)),
+                            style: OutlinedButton.styleFrom(
+                              side:    const BorderSide(color: Colors.red),
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 14),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
                       ],
                     ),
                   ),
-
-                  const SizedBox(height: 20),
-
-                  // shared_preferences
-                  _SeccionCard(
-                    titulo: '📦 shared_preferences (no sensible)',
-                    color: AppTheme.primary,
-                    campos: [
-                      _Campo('Nombre',   _datos['nombre'] ?? 'No guardado'),
-                      _Campo('Email',    _datos['email']  ?? 'No guardado'),
-                      _Campo('UID',      _datos['uid']    ?? 'No guardado'),
-                    ],
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // flutter_secure_storage
-                  _SeccionCard(
-                    titulo: '🔐 flutter_secure_storage (sensible)',
-                    color: AppTheme.secondary,
-                    campos: [
-                      _Campo('UID (seguro)',   _datos['uid_secure'] ?? 'No guardado'),
-                      _Campo('Access Token',  _truncarToken(_datos['token'])),
-                    ],
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // Token completo
-                  if (_datos['token'] != null)
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(14),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('🔑 JWT completo (Firebase ID Token)',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 13)),
-                            const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF1e1e2e),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                _datos['token'] ?? '',
-                                style: const TextStyle(
-                                    fontFamily: 'monospace',
-                                    fontSize: 9,
-                                    color: Color(0xFFcdd6f4)),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                  const SizedBox(height: 24),
-
-                  // Botón cerrar sesión
-                  ElevatedButton.icon(
-                    onPressed: _cerrarSesion,
-                    icon:  const Icon(Icons.logout),
-                    label: const Text('Cerrar sesión'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+                ),
     );
   }
 }
 
-class _SeccionCard extends StatelessWidget {
-  final String titulo;
-  final Color color;
-  final List<_Campo> campos;
+class _InfoTile extends StatelessWidget {
+  final IconData icono;
+  final String   label;
+  final String   valor;
+  final bool     esUltimo;
 
-  const _SeccionCard({
-    required this.titulo,
-    required this.color,
-    required this.campos,
+  const _InfoTile({
+    required this.icono,
+    required this.label,
+    required this.valor,
+    this.esUltimo = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(12)),
-            ),
-            child: Text(titulo,
-                style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                    fontSize: 13)),
-          ),
-          ...campos.map((c) => Padding(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 14, vertical: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(c.label,
-                    style: const TextStyle(
-                        fontSize: 11, color: Colors.grey)),
-                const SizedBox(height: 2),
-                Text(c.valor,
-                    style: const TextStyle(fontSize: 13)),
-                const Divider(height: 16),
-              ],
-            ),
-          )),
-        ],
-      ),
+    return Column(
+      children: [
+        ListTile(
+          leading: Icon(icono, color: AppTheme.primary),
+          title:   Text(label,
+              style: const TextStyle(
+                  fontSize: 12, color: Colors.grey)),
+          subtitle: Text(valor,
+              style: const TextStyle(
+                  fontSize: 15, color: Colors.black87)),
+        ),
+        if (!esUltimo)
+          const Divider(height: 1, indent: 16, endIndent: 16),
+      ],
     );
   }
-}
-
-class _Campo {
-  final String label;
-  final String valor;
-  const _Campo(this.label, this.valor);
 }

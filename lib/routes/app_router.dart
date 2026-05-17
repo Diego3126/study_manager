@@ -9,6 +9,9 @@ import '../views/tareas/tarea_form_view.dart';
 import '../views/tareas/tarea_detalle_view.dart';
 import '../views/enfoque/enfoque_view.dart';
 import '../views/estadisticas/estadisticas_view.dart';
+import '../views/perfil/editar_perfil_view.dart';
+import '../views/universidades/universidades_view.dart';
+import '../views/universidades/universidad_form_view.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/',
@@ -66,6 +69,18 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/perfil',
       builder: (context, state) => const PerfilView(),
+    ),
+    GoRoute(
+      path: '/perfil/editar',
+      builder: (context, state) => const EditarPerfilView(),
+    ),
+    GoRoute(
+      path: '/universidades',
+      builder: (context, state) => const UniversidadesView(),
+    ),
+    GoRoute(
+      path: '/universidades/nueva',
+      builder: (context, state) => const UniversidadFormView(),
     ),
   ],
 );

@@ -160,6 +160,14 @@ class _DashboardViewState extends State<DashboardView> {
                       onTap: () => context.push('/enfoque'),
                     ),
                   ),
+                  Expanded(
+                    child: _AccesoCard(
+                      titulo: 'Universidades',
+                      icono:  Icons.account_balance,
+                      color:  AppTheme.secondary,
+                      onTap:  () => context.push('/universidades'),
+                    ),
+                  ),
                 ],
               ),
 
