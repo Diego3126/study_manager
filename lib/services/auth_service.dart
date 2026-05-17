@@ -1,16 +1,20 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/usuario_model.dart';
 
 class AuthService {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+  final FirebaseAuth            _auth    = FirebaseAuth.instance;
+  final FirebaseFirestore        _db      = FirebaseFirestore.instance;
+  final FlutterSecureStorage     _secure  = const FlutterSecureStorage();
 
-  // Stream para escuchar cambios de sesión
   Stream<User?> get authStateChanges => _auth.authStateChanges();
+  User? get currentUser              => _auth.currentUser;
 
-  // Usuario actual
-  User? get currentUser => _auth.currentUser;
+  // Referencia al documento del usuario actual
+  DocumentReference<Map<String, dynamic>> get _userDoc =>
+      _db.collection('usuarios').doc(_auth.currentUser!.uid);
 
   // ── REGISTRO ──────────────────────────────────────────────────────────────
   Future<UserCredential> registrar({
@@ -19,20 +23,22 @@ class AuthService {
     required String password,
   }) async {
     final credential = await _auth.createUserWithEmailAndPassword(
-      email:    email,
-      password: password,
+      email: email, password: password,
     );
-
-    // Actualizar nombre en Firebase Auth
     await credential.user!.updateDisplayName(nombre);
 
-    // Guardar datos localmente
-    await _guardarDatosLocales(
-      nombre: nombre,
-      email:  email,
-      user:   credential.user!,
-    );
+    // Crear documento del usuario en Firestore
+    await _db.collection('usuarios').doc(credential.user!.uid).set({
+      'nombre':      nombre,
+      'email':       email,
+      'telefono':    '',
+      'carrera':     '',
+      'semestre':    '',
+      'universidad': '',
+      'creadoEn':    DateTime.now().toIso8601String(),
+    });
 
+    await _guardarLocal(nombre: nombre, email: email, user: credential.user!);
     return credential;
   }
 
@@ -42,71 +48,78 @@ class AuthService {
     required String password,
   }) async {
     final credential = await _auth.signInWithEmailAndPassword(
-      email:    email,
-      password: password,
+      email: email, password: password,
     );
-
-    // Guardar datos localmente
-    await _guardarDatosLocales(
+    await _guardarLocal(
       nombre: credential.user!.displayName ?? '',
       email:  email,
       user:   credential.user!,
     );
-
     return credential;
   }
 
-  // ── CERRAR SESIÓN ─────────────────────────────────────────────────────────
+  // ── LOGOUT ────────────────────────────────────────────────────────────────
   Future<void> logout() async {
     await _auth.signOut();
-    await _limpiarDatosLocales();
-  }
-
-  // ── GUARDAR DATOS LOCALES ─────────────────────────────────────────────────
-  Future<void> _guardarDatosLocales({
-    required String nombre,
-    required String email,
-    required User user,
-  }) async {
-    // Token JWT desde Firebase
-    final token = await user.getIdToken();
-
-    // flutter_secure_storage — datos sensibles
-    await _secureStorage.write(key: 'access_token', value: token);
-    await _secureStorage.write(key: 'uid',          value: user.uid);
-
-    // shared_preferences — datos no sensibles
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('nombre', nombre);
-    await prefs.setString('email',  email);
-    await prefs.setString('uid',    user.uid);
-  }
-
-  // ── LIMPIAR DATOS LOCALES ─────────────────────────────────────────────────
-  Future<void> _limpiarDatosLocales() async {
-    await _secureStorage.deleteAll();
+    await _secure.deleteAll();
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
   }
 
-  // ── LEER DATOS LOCALES ────────────────────────────────────────────────────
-  Future<Map<String, String?>> getDatosLocales() async {
-    final prefs  = await SharedPreferences.getInstance();
-    final token  = await _secureStorage.read(key: 'access_token');
-    final uid    = await _secureStorage.read(key: 'uid');
-
-    return {
-      'nombre': prefs.getString('nombre'),
-      'email':  prefs.getString('email'),
-      'uid':    prefs.getString('uid'),
-      'token':  token,
-      'uid_secure': uid,
-    };
+  // ── OBTENER PERFIL ────────────────────────────────────────────────────────
+  Future<Usuario?> getPerfil() async {
+    try {
+      final uid = _auth.currentUser?.uid;
+      if (uid == null) return null;
+      final doc = await _db.collection('usuarios').doc(uid).get();
+      if (!doc.exists) return null;
+      return Usuario.fromFirestore(uid, doc.data()!);
+    } catch (_) {
+      return null;
+    }
   }
 
-  // ── VERIFICAR SI HAY SESIÓN ───────────────────────────────────────────────
-  Future<bool> haySesion() async {
-    final token = await _secureStorage.read(key: 'access_token');
-    return token != null && _auth.currentUser != null;
+  // ── ACTUALIZAR PERFIL ─────────────────────────────────────────────────────
+  Future<void> actualizarPerfil(Usuario usuario) async {
+    // Actualizar en Firestore
+    await _userDoc.update(usuario.toFirestore());
+
+    // Actualizar nombre en Firebase Auth
+    await _auth.currentUser!.updateDisplayName(usuario.nombre);
+
+    // Actualizar shared_preferences
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('nombre', usuario.nombre);
+    await prefs.setString('email',  usuario.email);
+  }
+
+  // ── CAMBIAR CONTRASEÑA ────────────────────────────────────────────────────
+  Future<void> cambiarPassword({
+    required String passwordActual,
+    required String passwordNuevo,
+  }) async {
+    final user  = _auth.currentUser!;
+    final cred  = EmailAuthProvider.credential(
+      email:    user.email!,
+      password: passwordActual,
+    );
+    // Reautenticar antes de cambiar la contraseña
+    await user.reauthenticateWithCredential(cred);
+    await user.updatePassword(passwordNuevo);
+  }
+
+  // ── GUARDAR LOCAL ─────────────────────────────────────────────────────────
+  Future<void> _guardarLocal({
+    required String nombre,
+    required String email,
+    required User   user,
+  }) async {
+    final token = await user.getIdToken();
+    await _secure.write(key: 'access_token', value: token);
+    await _secure.write(key: 'uid',          value: user.uid);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('nombre', nombre);
+    await prefs.setString('email',  email);
+    await prefs.setString('uid',    user.uid);
   }
 }
