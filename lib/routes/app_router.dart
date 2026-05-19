@@ -12,34 +12,28 @@ import '../views/estadisticas/estadisticas_view.dart';
 import '../views/perfil/editar_perfil_view.dart';
 import '../views/universidades/universidades_view.dart';
 import '../views/universidades/universidad_form_view.dart';
+import '../views/perfil/perfil_info_view.dart';
+import '../views/perfil/cambiar_password_view.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/',
   redirect: (context, state) {
     final loggedIn = FirebaseAuth.instance.currentUser != null;
-    final enLogin  = state.matchedLocation == '/login' ||
-                     state.matchedLocation == '/registro';
+    final enLogin =
+        state.matchedLocation == '/login' ||
+        state.matchedLocation == '/registro';
     if (!loggedIn && !enLogin) return '/login';
-    if (loggedIn  &&  enLogin) return '/';
+    if (loggedIn && enLogin) return '/';
     return null;
   },
   routes: [
-    GoRoute(
-      path: '/login',
-      builder: (context, state) => const LoginView(),
-    ),
+    GoRoute(path: '/login', builder: (context, state) => const LoginView()),
     GoRoute(
       path: '/registro',
       builder: (context, state) => const RegistroView(),
     ),
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const DashboardView(),
-    ),
-    GoRoute(
-      path: '/tareas',
-      builder: (context, state) => const TareasView(),
-    ),
+    GoRoute(path: '/', builder: (context, state) => const DashboardView()),
+    GoRoute(path: '/tareas', builder: (context, state) => const TareasView()),
     GoRoute(
       path: '/tareas/nueva',
       builder: (context, state) => const TareaFormView(),
@@ -58,18 +52,12 @@ final GoRouter appRouter = GoRouter(
         return TareaFormView(id: id);
       },
     ),
-    GoRoute(
-      path: '/enfoque',
-      builder: (context, state) => const EnfoqueView(),
-    ),
+    GoRoute(path: '/enfoque', builder: (context, state) => const EnfoqueView()),
     GoRoute(
       path: '/estadisticas',
       builder: (context, state) => const EstadisticasView(),
     ),
-    GoRoute(
-      path: '/perfil',
-      builder: (context, state) => const PerfilView(),
-    ),
+    GoRoute(path: '/perfil', builder: (context, state) => const PerfilView()),
     GoRoute(
       path: '/perfil/editar',
       builder: (context, state) => const EditarPerfilView(),
@@ -81,6 +69,14 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/universidades/nueva',
       builder: (context, state) => const UniversidadFormView(),
+    ),
+    GoRoute(
+      path: '/perfil/info',
+      builder: (context, state) => const PerfilInfoView(),
+    ),
+    GoRoute(
+      path: '/perfil/cambiar-contrasena',
+      builder: (context, state) => const CambiarPasswordView(),
     ),
   ],
 );

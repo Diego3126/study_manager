@@ -3,14 +3,17 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/usuario_model.dart';
+import 'dart:typed_data';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class AuthService {
-  final FirebaseAuth            _auth    = FirebaseAuth.instance;
-  final FirebaseFirestore        _db      = FirebaseFirestore.instance;
-  final FlutterSecureStorage     _secure  = const FlutterSecureStorage();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FlutterSecureStorage _secure = const FlutterSecureStorage();
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
-  User? get currentUser              => _auth.currentUser;
+  User? get currentUser => _auth.currentUser;
 
   // Referencia al documento del usuario actual
   DocumentReference<Map<String, dynamic>> get _userDoc =>
@@ -24,19 +27,20 @@ class AuthService {
     String universidad = '',
   }) async {
     final credential = await _auth.createUserWithEmailAndPassword(
-      email: email, password: password,
+      email: email,
+      password: password,
     );
     await credential.user!.updateDisplayName(nombre);
 
     // Crear documento del usuario en Firestore
     await _db.collection('usuarios').doc(credential.user!.uid).set({
-      'nombre':      nombre,
-      'email':       email,
-      'telefono':    '',
-      'carrera':     '',
-      'semestre':    '',
+      'nombre': nombre,
+      'email': email,
+      'telefono': '',
+      'carrera': '',
+      'semestre': '',
       'universidad': universidad,
-      'creadoEn':    DateTime.now().toIso8601String(),
+      'creadoEn': DateTime.now().toIso8601String(),
     });
 
     await _guardarLocal(nombre: nombre, email: email, user: credential.user!);
@@ -49,12 +53,13 @@ class AuthService {
     required String password,
   }) async {
     final credential = await _auth.signInWithEmailAndPassword(
-      email: email, password: password,
+      email: email,
+      password: password,
     );
     await _guardarLocal(
       nombre: credential.user!.displayName ?? '',
-      email:  email,
-      user:   credential.user!,
+      email: email,
+      user: credential.user!,
     );
     return credential;
   }
@@ -91,7 +96,7 @@ class AuthService {
     // Actualizar shared_preferences
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('nombre', usuario.nombre);
-    await prefs.setString('email',  usuario.email);
+    await prefs.setString('email', usuario.email);
   }
 
   // ── CAMBIAR CONTRASEÑA ────────────────────────────────────────────────────
@@ -99,9 +104,9 @@ class AuthService {
     required String passwordActual,
     required String passwordNuevo,
   }) async {
-    final user  = _auth.currentUser!;
-    final cred  = EmailAuthProvider.credential(
-      email:    user.email!,
+    final user = _auth.currentUser!;
+    final cred = EmailAuthProvider.credential(
+      email: user.email!,
       password: passwordActual,
     );
     // Reautenticar antes de cambiar la contraseña
@@ -113,14 +118,65 @@ class AuthService {
   Future<void> _guardarLocal({
     required String nombre,
     required String email,
-    required User   user,
+    required User user,
   }) async {
     final token = await user.getIdToken();
     await _secure.write(key: 'access_token', value: token);
-    await _secure.write(key: 'uid',          value: user.uid);
+    await _secure.write(key: 'uid', value: user.uid);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('nombre', nombre);
-    await prefs.setString('email',  email);
-    await prefs.setString('uid',    user.uid);
+    await prefs.setString('email', email);
+    await prefs.setString('uid', user.uid);
+  }
+
+  // ── ENVIAR VERIFICACIÓN DE EMAIL ──────────────────────────────────────────
+  Future<void> enviarVerificacionEmail() async {
+    await _auth.currentUser?.sendEmailVerification();
+  }
+
+  // ── VERIFICAR SI EL EMAIL YA FUE CONFIRMADO ───────────────────────────────
+  Future<bool> emailVerificado() async {
+    await _auth.currentUser?.reload();
+    return _auth.currentUser?.emailVerified ?? false;
+  }
+
+  // ── RECUPERAR CONTRASEÑA ──────────────────────────────────────────────────
+  Future<void> enviarResetPassword(String email) async {
+    await _auth.sendPasswordResetEmail(email: email);
+  }
+
+  // ── SUBIR FOTO DE PERFIL (CLOUDINARY) ────────────────────────────────────
+  Future<String> subirFotoPerfil(Uint8List bytes) async {
+    const cloudName = 'dpuave3zd';
+    const uploadPreset = 'StudyManager';
+
+    final uri = Uri.parse(
+      'https://api.cloudinary.com/v1_1/$cloudName/image/upload',
+    );
+
+    final request = http.MultipartRequest('POST', uri)
+      ..fields['upload_preset'] = uploadPreset
+      ..fields['folder'] = 'fotos_perfil'
+      ..files.add(
+        http.MultipartFile.fromBytes(
+          'file',
+          bytes,
+          filename: '${_auth.currentUser!.uid}.jpg',
+        ),
+      );
+
+    final streamed = await request.send();
+    final body = jsonDecode(await streamed.stream.bytesToString());
+
+    if (streamed.statusCode != 200) {
+      throw Exception(body['error']?['message'] ?? 'Error al subir imagen');
+    }
+
+    final url = body['secure_url'] as String;
+
+    // Guardar URL en Firestore
+    await _userDoc.update({'fotoPerfil': url});
+
+    return url;
   }
 }

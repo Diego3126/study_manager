@@ -6,6 +6,7 @@ class Usuario {
   final String carrera;
   final String semestre;
   final String universidad;
+  final String? fotoPerfil;
 
   Usuario({
     required this.uid,
@@ -15,6 +16,7 @@ class Usuario {
     this.carrera     = '',
     this.semestre    = '',
     this.universidad = '',
+    this.fotoPerfil  = '',
   });
 
   factory Usuario.fromFirestore(String uid, Map<String, dynamic> data) {
@@ -26,6 +28,7 @@ class Usuario {
       carrera:      data['carrera']      ?? '',
       semestre:     data['semestre']     ?? '',
       universidad:  data['universidad']  ?? '',
+      fotoPerfil:   data['fotoPerfil']   ?? '',
     );
   }
 
@@ -37,6 +40,7 @@ class Usuario {
       'carrera':     carrera,
       'semestre':    semestre,
       'universidad': universidad,
+      'fotoPerfil':  fotoPerfil,
     };
   }
 
@@ -47,6 +51,7 @@ class Usuario {
     String? carrera,
     String? semestre,
     String? universidad,
+    String? fotoPerfil,
   }) {
     return Usuario(
       uid:          uid,
@@ -56,6 +61,7 @@ class Usuario {
       carrera:      carrera      ?? this.carrera,
       semestre:     semestre     ?? this.semestre,
       universidad:  universidad  ?? this.universidad,
+      fotoPerfil:   fotoPerfil   ?? this.fotoPerfil,
     );
   }
 }
