@@ -77,6 +77,7 @@ class AuthService {
     try {
       final uid = _auth.currentUser?.uid;
       if (uid == null) return null;
+      await sincronizarEmail();
       final doc = await _db.collection('usuarios').doc(uid).get();
       if (!doc.exists) return null;
       return Usuario.fromFirestore(uid, doc.data()!);
@@ -178,5 +179,72 @@ class AuthService {
     await _userDoc.update({'fotoPerfil': url});
 
     return url;
+  }
+
+  // ── CAMBIAR EMAIL CON VERIFICACIÓN ────────────────────────────────────────
+  Future<void> cambiarEmail({
+    required String emailNuevo,
+    required String passwordActual,
+  }) async {
+    final user = _auth.currentUser!;
+
+    // Reautenticar primero por seguridad
+    final cred = EmailAuthProvider.credential(
+      email: user.email!,
+      password: passwordActual,
+    );
+    await user.reauthenticateWithCredential(cred);
+
+    // Envía verificación al nuevo correo; solo cambia al hacer clic en el enlace
+    await user.verifyBeforeUpdateEmail(emailNuevo);
+  }
+
+  // ── SINCRONIZAR EMAIL DE AUTH CON FIRESTORE ───────────────────────────────
+  Future<void> sincronizarEmail() async {
+    await _auth.currentUser?.reload();
+    final emailAuth = _auth.currentUser?.email;
+    if (emailAuth == null) return;
+
+    final doc = await _userDoc.get();
+    if (!doc.exists) return;
+
+    final emailFirestore = doc.data()?['email'] as String?;
+
+    if (emailAuth != emailFirestore) {
+      await _userDoc.update({'email': emailAuth});
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('email', emailAuth);
+    }
+  }
+
+  // ── VERIFICAR SI UN EMAIL YA ESTÁ EN USO ─────────────────────────────────
+  Future<bool> emailEnUso(String email) async {
+    try {
+      // Intentar login con contraseña falsa — si el error es
+      // 'wrong-password' o 'invalid-credential' el correo SÍ existe
+      // Si el error es 'user-not-found' el correo NO existe
+      await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: 'check_only_fake_password_xyz_123',
+      );
+      return true; // No debería llegar aquí
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'wrong-password' ||
+          e.code == 'invalid-credential' ||
+          e.code == 'invalid-login-credentials')
+        return true;
+      if (e.code == 'user-not-found') return false;
+      return false;
+    }
+  }
+
+  // ── VERIFICAR CONTRASEÑA ACTUAL ───────────────────────────────────────────
+  Future<void> verificarPassword(String password) async {
+    final user = _auth.currentUser!;
+    final cred = EmailAuthProvider.credential(
+      email: user.email!,
+      password: password,
+    );
+    await user.reauthenticateWithCredential(cred);
   }
 }
