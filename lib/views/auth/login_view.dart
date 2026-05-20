@@ -12,24 +12,27 @@ class LoginView extends StatefulWidget {
 }
 
 class _LoginViewState extends State<LoginView> {
-  final _formKey  = GlobalKey<FormState>();
-  final _email    = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _email = TextEditingController();
   final _password = TextEditingController();
-  bool    _cargando  = false;
-  bool    _verPass   = false;
-  bool    _recuerdar = false;
+  bool _cargando = false;
+  bool _verPass = false;
+  bool _recuerdar = false;
   String? _error;
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() { _cargando = true; _error = null; });
+    setState(() {
+      _cargando = true;
+      _error = null;
+    });
     try {
       await AuthService().login(
-        email:    _email.text.trim(),
+        email: _email.text.trim(),
         password: _password.text.trim(),
       );
       if (!mounted) return;
-      context.go('/');
+      context.go('/dashboard');
     } on Exception catch (e) {
       setState(() => _error = _mensajeError(e.toString()));
     } finally {
@@ -39,9 +42,9 @@ class _LoginViewState extends State<LoginView> {
 
   Future<void> _mostrarSheetOlvidePassword() async {
     await showModalBottomSheet(
-      context:            context,
-      backgroundColor:    Colors.transparent,
-      barrierColor:       Colors.black.withOpacity(0.6),
+      context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withOpacity(0.6),
       isScrollControlled: true,
       builder: (_) => _SheetOlvidePassword(),
     );
@@ -50,10 +53,8 @@ class _LoginViewState extends State<LoginView> {
   String _mensajeError(String e) {
     if (e.contains('user-not-found'))
       return 'No existe una cuenta con ese correo.';
-    if (e.contains('wrong-password'))
-      return 'Contraseña incorrecta.';
-    if (e.contains('invalid-email'))
-      return 'El correo no es válido.';
+    if (e.contains('wrong-password')) return 'Contraseña incorrecta.';
+    if (e.contains('invalid-email')) return 'El correo no es válido.';
     if (e.contains('too-many-requests'))
       return 'Demasiados intentos. Intenta más tarde.';
     if (e.contains('invalid-credential'))
@@ -92,8 +93,8 @@ class _LoginViewState extends State<LoginView> {
           // 4. Contenido
           AnimatedPadding(
             duration: const Duration(milliseconds: 300),
-            curve:    Curves.easeOut,
-            padding:  EdgeInsets.only(bottom: bottomInset),
+            curve: Curves.easeOut,
+            padding: EdgeInsets.only(bottom: bottomInset),
             child: SafeArea(
               child: Column(
                 children: [
@@ -105,7 +106,7 @@ class _LoginViewState extends State<LoginView> {
                     decoration: const BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.only(
-                        topLeft:  Radius.circular(32),
+                        topLeft: Radius.circular(32),
                         topRight: Radius.circular(32),
                       ),
                     ),
@@ -114,15 +115,14 @@ class _LoginViewState extends State<LoginView> {
                       key: _formKey,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
-                        mainAxisSize:       MainAxisSize.min,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-
                           // ── Logo y título ───────────────────────────
                           Center(
                             child: Column(
                               children: [
                                 Container(
-                                  width:  64,
+                                  width: 64,
                                   height: 64,
                                   decoration: BoxDecoration(
                                     color: AppTheme.primary.withOpacity(0.12),
@@ -131,16 +131,16 @@ class _LoginViewState extends State<LoginView> {
                                   child: Icon(
                                     Icons.menu_book_rounded,
                                     color: AppTheme.primary,
-                                    size:  36,
+                                    size: 36,
                                   ),
                                 ),
                                 const SizedBox(height: 14),
                                 const Text(
                                   'StudyManager',
                                   style: TextStyle(
-                                    fontSize:   26,
+                                    fontSize: 26,
                                     fontWeight: FontWeight.bold,
-                                    color:      Color(0xFF1A1A2E),
+                                    color: Color(0xFF1A1A2E),
                                     letterSpacing: -0.5,
                                   ),
                                 ),
@@ -149,7 +149,7 @@ class _LoginViewState extends State<LoginView> {
                                   'Tu agenda académica inteligente',
                                   style: TextStyle(
                                     fontSize: 13,
-                                    color:    Color(0xFF8A8A9A),
+                                    color: Color(0xFF8A8A9A),
                                   ),
                                 ),
                               ],
@@ -161,9 +161,9 @@ class _LoginViewState extends State<LoginView> {
                           const Text(
                             'Iniciar sesión',
                             style: TextStyle(
-                              fontSize:   18,
+                              fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color:      Color(0xFF1A1A2E),
+                              color: Color(0xFF1A1A2E),
                             ),
                           ),
 
@@ -171,26 +171,31 @@ class _LoginViewState extends State<LoginView> {
 
                           // ── Email ───────────────────────────────────
                           TextFormField(
-                            controller:   _email,
+                            controller: _email,
                             keyboardType: TextInputType.emailAddress,
                             style: const TextStyle(
-                                fontSize: 15, color: Color(0xFF1A1A2E)),
+                              fontSize: 15,
+                              color: Color(0xFF1A1A2E),
+                            ),
                             decoration: _inputDecoration(
                               hint: 'Correo electrónico',
                               icon: Icons.mail_outline_rounded,
                             ),
                             validator: (v) => (v == null || v.isEmpty)
-                                ? 'Ingresa tu correo' : null,
+                                ? 'Ingresa tu correo'
+                                : null,
                           ),
 
                           const SizedBox(height: 12),
 
                           // ── Contraseña ──────────────────────────────
                           TextFormField(
-                            controller:  _password,
+                            controller: _password,
                             obscureText: !_verPass,
                             style: const TextStyle(
-                                fontSize: 15, color: Color(0xFF1A1A2E)),
+                              fontSize: 15,
+                              color: Color(0xFF1A1A2E),
+                            ),
                             decoration: _inputDecoration(
                               hint: 'Contraseña',
                               icon: Icons.lock_outline_rounded,
@@ -200,14 +205,15 @@ class _LoginViewState extends State<LoginView> {
                                       ? Icons.visibility_off_outlined
                                       : Icons.visibility_outlined,
                                   color: const Color(0xFF8A8A9A),
-                                  size:  20,
+                                  size: 20,
                                 ),
                                 onPressed: () =>
                                     setState(() => _verPass = !_verPass),
                               ),
                             ),
                             validator: (v) => (v == null || v.isEmpty)
-                                ? 'Ingresa tu contraseña' : null,
+                                ? 'Ingresa tu contraseña'
+                                : null,
                           ),
 
                           const SizedBox(height: 12),
@@ -219,39 +225,42 @@ class _LoginViewState extends State<LoginView> {
                               Row(
                                 children: [
                                   SizedBox(
-                                    width: 20, height: 20,
+                                    width: 20,
+                                    height: 20,
                                     child: Checkbox(
-                                      value:       _recuerdar,
+                                      value: _recuerdar,
                                       activeColor: AppTheme.primary,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       onChanged: (val) => setState(
-                                          () => _recuerdar = val ?? false),
+                                        () => _recuerdar = val ?? false,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(width: 8),
                                   const Text(
                                     'Recuérdame',
                                     style: TextStyle(
-                                        fontSize: 13,
-                                        color:    Color(0xFF5A5A6A)),
+                                      fontSize: 13,
+                                      color: Color(0xFF5A5A6A),
+                                    ),
                                   ),
                                 ],
                               ),
                               TextButton(
                                 onPressed: _mostrarSheetOlvidePassword,
                                 style: TextButton.styleFrom(
-                                  padding:         EdgeInsets.zero,
-                                  minimumSize:     Size.zero,
+                                  padding: EdgeInsets.zero,
+                                  minimumSize: Size.zero,
                                   tapTargetSize:
                                       MaterialTapTargetSize.shrinkWrap,
                                 ),
                                 child: Text(
                                   '¿Olvidaste tu contraseña?',
                                   style: TextStyle(
-                                    fontSize:   13,
-                                    color:      AppTheme.primary,
+                                    fontSize: 13,
+                                    color: AppTheme.primary,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -265,21 +274,26 @@ class _LoginViewState extends State<LoginView> {
                             Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color:        Colors.red.shade50,
+                                color: Colors.red.shade50,
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                    color: Colors.red.shade200),
+                                border: Border.all(color: Colors.red.shade200),
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(Icons.error_outline,
-                                      color: Colors.red, size: 18),
+                                  const Icon(
+                                    Icons.error_outline,
+                                    color: Colors.red,
+                                    size: 18,
+                                  ),
                                   const SizedBox(width: 8),
                                   Expanded(
-                                    child: Text(_error!,
-                                        style: const TextStyle(
-                                            color:    Colors.red,
-                                            fontSize: 13)),
+                                    child: Text(
+                                      _error!,
+                                      style: const TextStyle(
+                                        color: Colors.red,
+                                        fontSize: 13,
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -296,22 +310,24 @@ class _LoginViewState extends State<LoginView> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppTheme.primary,
                                 foregroundColor: Colors.white,
-                                elevation:       0,
+                                elevation: 0,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                               ),
                               child: _cargando
                                   ? const SizedBox(
-                                      width: 20, height: 20,
+                                      width: 20,
+                                      height: 20,
                                       child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color:       Colors.white),
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
                                     )
                                   : const Text(
                                       'Iniciar sesión',
                                       style: TextStyle(
-                                        fontSize:   16,
+                                        fontSize: 16,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -325,18 +341,25 @@ class _LoginViewState extends State<LoginView> {
                             children: [
                               Expanded(
                                 child: Divider(
-                                    color: Color(0xFFE0E0E0), thickness: 1),
+                                  color: Color(0xFFE0E0E0),
+                                  thickness: 1,
+                                ),
                               ),
                               Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 12),
-                                child: Text('O',
-                                    style: TextStyle(
-                                        fontSize: 13,
-                                        color:    Color(0xFF8A8A9A))),
+                                child: Text(
+                                  'O',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF8A8A9A),
+                                  ),
+                                ),
                               ),
                               Expanded(
                                 child: Divider(
-                                    color: Color(0xFFE0E0E0), thickness: 1),
+                                  color: Color(0xFFE0E0E0),
+                                  thickness: 1,
+                                ),
                               ),
                             ],
                           ),
@@ -350,16 +373,17 @@ class _LoginViewState extends State<LoginView> {
                               const Text(
                                 '¿No tienes cuenta? ',
                                 style: TextStyle(
-                                    fontSize: 14,
-                                    color:    Color(0xFF5A5A6A)),
+                                  fontSize: 14,
+                                  color: Color(0xFF5A5A6A),
+                                ),
                               ),
                               GestureDetector(
                                 onTap: () => context.push('/registro'),
                                 child: Text(
                                   'Regístrate',
                                   style: TextStyle(
-                                    fontSize:   14,
-                                    color:      AppTheme.primary,
+                                    fontSize: 14,
+                                    color: AppTheme.primary,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -382,28 +406,25 @@ class _LoginViewState extends State<LoginView> {
   }
 
   InputDecoration _inputDecoration({
-    required String   hint,
+    required String hint,
     required IconData icon,
-    Widget?           suffix,
+    Widget? suffix,
   }) {
     return InputDecoration(
-      hintText:  hint,
+      hintText: hint,
       hintStyle: const TextStyle(color: Color(0xFFAAAAAA), fontSize: 15),
       prefixIcon: Icon(icon, color: const Color(0xFF8A8A9A), size: 20),
       suffixIcon: suffix,
-      filled:     true,
-      fillColor:  const Color(0xFFF7F8FA),
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      filled: true,
+      fillColor: const Color(0xFFF7F8FA),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide:
-            const BorderSide(color: Color(0xFFE8E8F0), width: 1),
+        borderSide: const BorderSide(color: Color(0xFFE8E8F0), width: 1),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide:
-            const BorderSide(color: Color(0xFFE8E8F0), width: 1),
+        borderSide: const BorderSide(color: Color(0xFFE8E8F0), width: 1),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -432,8 +453,8 @@ class _SheetOlvidePassword extends StatefulWidget {
 
 class _SheetOlvidePasswordState extends State<_SheetOlvidePassword> {
   final _emailCtrl = TextEditingController();
-  bool    _enviando = false;
-  bool    _enviado  = false;
+  bool _enviando = false;
+  bool _enviado = false;
   String? _error;
 
   @override
@@ -448,16 +469,22 @@ class _SheetOlvidePasswordState extends State<_SheetOlvidePassword> {
       setState(() => _error = 'Ingresa tu correo');
       return;
     }
-    setState(() { _enviando = true; _error = null; });
+    setState(() {
+      _enviando = true;
+      _error = null;
+    });
     try {
       await AuthService().enviarResetPassword(email);
       if (!mounted) return;
-      setState(() { _enviando = false; _enviado = true; });
+      setState(() {
+        _enviando = false;
+        _enviado = true;
+      });
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _enviando = false;
-        _error    = 'No encontramos una cuenta con ese correo.';
+        _error = 'No encontramos una cuenta con ese correo.';
       });
     }
   }
@@ -466,38 +493,41 @@ class _SheetOlvidePasswordState extends State<_SheetOlvidePassword> {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.fromLTRB(
-        24, 12, 24,
+        24,
+        12,
+        24,
         MediaQuery.of(context).viewInsets.bottom + 40,
       ),
       decoration: const BoxDecoration(
-        color:        Colors.white,
+        color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-
           // Pastilla
           Container(
-            width: 40, height: 4,
+            width: 40,
+            height: 4,
             margin: const EdgeInsets.only(bottom: 28),
             decoration: BoxDecoration(
-              color:        Colors.grey.shade300,
+              color: Colors.grey.shade300,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
 
           // Ícono
           Container(
-            width: 64, height: 64,
+            width: 64,
+            height: 64,
             decoration: BoxDecoration(
-              color:        AppTheme.primary,
+              color: AppTheme.primary,
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
               Icons.lock_reset_rounded,
               color: Colors.white,
-              size:  36,
+              size: 36,
             ),
           ),
           const SizedBox(height: 24),
@@ -506,9 +536,9 @@ class _SheetOlvidePasswordState extends State<_SheetOlvidePassword> {
           Text(
             _enviado ? '¡Correo enviado!' : 'Recuperar contraseña',
             style: const TextStyle(
-              fontSize:   20,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
-              color:      Color(0xFF1A1A2E),
+              color: Color(0xFF1A1A2E),
             ),
           ),
           const SizedBox(height: 12),
@@ -517,14 +547,14 @@ class _SheetOlvidePasswordState extends State<_SheetOlvidePassword> {
           Text(
             _enviado
                 ? 'Revisa tu bandeja de entrada y sigue el enlace '
-                  'para restablecer tu contraseña.'
+                      'para restablecer tu contraseña.'
                 : 'Ingresa el correo asociado a tu cuenta y te '
-                  'enviaremos un enlace para restablecerla.',
+                      'enviaremos un enlace para restablecerla.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,
-              color:    Colors.grey.shade500,
-              height:   1.5,
+              color: Colors.grey.shade500,
+              height: 1.5,
             ),
           ),
           const SizedBox(height: 24),
@@ -532,25 +562,24 @@ class _SheetOlvidePasswordState extends State<_SheetOlvidePassword> {
           // Campo email + error (solo antes de enviar)
           if (!_enviado) ...[
             TextField(
-              controller:   _emailCtrl,
+              controller: _emailCtrl,
               keyboardType: TextInputType.emailAddress,
               decoration: InputDecoration(
-                hintText:  'Correo electrónico',
-                hintStyle: TextStyle(
-                    color: Colors.grey.shade400, fontSize: 14),
+                hintText: 'Correo electrónico',
+                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
                 prefixIcon: Icon(
-                    Icons.mail_outline_rounded,
-                    color: AppTheme.primary),
-                filled:    true,
+                  Icons.mail_outline_rounded,
+                  color: AppTheme.primary,
+                ),
+                filled: true,
                 fillColor: const Color(0xFFF7F8FA),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide:   BorderSide.none,
+                  borderSide: BorderSide.none,
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                      color: AppTheme.primary, width: 1.5),
+                  borderSide: BorderSide(color: AppTheme.primary, width: 1.5),
                 ),
               ),
             ),
@@ -559,19 +588,23 @@ class _SheetOlvidePasswordState extends State<_SheetOlvidePassword> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color:        Colors.red.shade50,
+                  color: Colors.red.shade50,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: Colors.red.shade200),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.error_outline,
-                        color: Colors.red, size: 18),
+                    const Icon(
+                      Icons.error_outline,
+                      color: Colors.red,
+                      size: 18,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(_error!,
-                          style: const TextStyle(
-                              color: Colors.red, fontSize: 13)),
+                      child: Text(
+                        _error!,
+                        style: const TextStyle(color: Colors.red, fontSize: 13),
+                      ),
                     ),
                   ],
                 ),
@@ -582,31 +615,35 @@ class _SheetOlvidePasswordState extends State<_SheetOlvidePassword> {
 
           // Botón principal
           SizedBox(
-            width: double.infinity, height: 50,
+            width: double.infinity,
+            height: 50,
             child: ElevatedButton(
               onPressed: _enviando
                   ? null
                   : _enviado
-                      ? () => Navigator.pop(context)
-                      : _enviar,
+                  ? () => Navigator.pop(context)
+                  : _enviar,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primary,
                 foregroundColor: Colors.white,
-                elevation:       0,
+                elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),
               ),
               child: _enviando
                   ? const SizedBox(
-                      width: 20, height: 20,
+                      width: 20,
+                      height: 20,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white),
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
                     )
                   : Text(
                       _enviado ? 'Entendido' : 'Enviar enlace',
                       style: const TextStyle(
-                        fontSize:   15,
+                        fontSize: 15,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -617,7 +654,8 @@ class _SheetOlvidePasswordState extends State<_SheetOlvidePassword> {
           if (!_enviado) ...[
             const SizedBox(height: 12),
             SizedBox(
-              width: double.infinity, height: 50,
+              width: double.infinity,
+              height: 50,
               child: OutlinedButton(
                 onPressed: () => Navigator.pop(context),
                 style: OutlinedButton.styleFrom(
@@ -629,10 +667,7 @@ class _SheetOlvidePasswordState extends State<_SheetOlvidePassword> {
                 ),
                 child: const Text(
                   'Cancelar',
-                  style: TextStyle(
-                    fontSize:   15,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
                 ),
               ),
             ),

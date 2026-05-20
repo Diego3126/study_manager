@@ -127,11 +127,14 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
     });
 
     try {
-      await AuthService().subirFotoPerfil(bytes);
+      final nuevaUrl = await AuthService().subirFotoPerfil(bytes);
       if (!mounted) return;
+      setState(() {
+        _usuario = _usuario?.copyWith(fotoPerfil: nuevaUrl);
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Foto actualizada correctamente'),
+          content: Text('Foto actualizada correctamente.'),
           backgroundColor: Colors.green,
         ),
       );
