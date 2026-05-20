@@ -8,6 +8,7 @@ class Tarea {
   final DateTime fechaEntrega;
   final bool completada;
   final DateTime creadaEn;
+  final List<String> archivos; // URLs de los archivos adjuntos
 
   Tarea({
     this.firestoreId,
@@ -19,6 +20,7 @@ class Tarea {
     required this.fechaEntrega,
     this.completada = false,
     DateTime? creadaEn,
+    this.archivos = const [],
   }) : creadaEn = creadaEn ?? DateTime.now();
 
   // Para guardar en Firestore
@@ -32,6 +34,7 @@ class Tarea {
       'fechaEntrega':  fechaEntrega.toIso8601String(),
       'completada':    completada,
       'creadaEn':      creadaEn.toIso8601String(),
+      'archivos':      archivos,
     };
   }
 
@@ -47,6 +50,7 @@ class Tarea {
       fechaEntrega: DateTime.parse(data['fechaEntrega']),
       completada:   data['completada']    ?? false,
       creadaEn:     DateTime.parse(data['creadaEn']),
+      archivos:     List<String>.from(data['archivos'] ?? []),
     );
   }
 
@@ -60,6 +64,7 @@ class Tarea {
     DateTime? fechaEntrega,
     bool? completada,
     DateTime? creadaEn,
+    List<String>? archivos,
   }) {
     return Tarea(
       firestoreId:  firestoreId  ?? this.firestoreId,
@@ -71,6 +76,7 @@ class Tarea {
       fechaEntrega: fechaEntrega ?? this.fechaEntrega,
       completada:   completada   ?? this.completada,
       creadaEn:     creadaEn,
+      archivos:     archivos     ?? this.archivos,
     );
   }
 }

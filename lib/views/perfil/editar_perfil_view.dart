@@ -27,8 +27,9 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
   bool _cargando = true;
   bool _guardando = false;
   bool _subiendoFoto = false;
+  String? _errorEmail; // ← error inline del campo email
   Usuario? _usuario;
-  Uint8List? _fotoBytes; // Preview local antes de guardar
+  Uint8List? _fotoBytes;
 
   List<Universidad> _universidades = [];
   bool _cargandoUnis = false;
@@ -62,7 +63,7 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
     });
   }
 
-  // ── Seleccionar y subir foto ───────────────────────────────────────────
+  // ── Seleccionar y subir foto ──────────────────────────────────────────
   Future<void> _seleccionarFoto() async {
     final fuente = await showModalBottomSheet<ImageSource>(
       context: context,
@@ -108,7 +109,6 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
     );
     if (picked == null) return;
 
-    // Validar 5 MB
     final bytes = await picked.readAsBytes();
     if (bytes.lengthInBytes > 5 * 1024 * 1024) {
       if (!mounted) return;
@@ -127,17 +127,20 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
     });
 
     try {
-      await AuthService().subirFotoPerfil(bytes);
+      final nuevaUrl = await AuthService().subirFotoPerfil(bytes);
       if (!mounted) return;
+      setState(() {
+        _usuario = _usuario?.copyWith(fotoPerfil: nuevaUrl);
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Foto actualizada correctamente'),
+          content: Text('Foto actualizada correctamente.'),
           backgroundColor: Colors.green,
         ),
       );
     } catch (e) {
       if (!mounted) return;
-      setState(() => _fotoBytes = null); // Revertir preview si falló
+      setState(() => _fotoBytes = null);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error al subir la foto: $e'),
@@ -149,42 +152,173 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
     }
   }
 
+  // ── Pedir contraseña para confirmar cambio de email ───────────────────
+  Future<String?> _pedirPassword() async {
+    final controller = TextEditingController();
+    bool _oculta = true;
+
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text('Confirmar cambio de correo'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Para cambiar tu correo electrónico necesitamos verificar tu identidad. Ingresa tu contraseña actual.',
+                style: TextStyle(fontSize: 13, color: Colors.grey),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                obscureText: _oculta,
+                decoration: InputDecoration(
+                  labelText: 'Contraseña actual',
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _oculta
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                    ),
+                    onPressed: () => setS(() => _oculta = !_oculta),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primary,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () => Navigator.pop(ctx, controller.text),
+              child: const Text('Confirmar'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Guardar cambios ───────────────────────────────────────────────────
   Future<void> _guardar() async {
+    // Limpiar error de email antes de intentar
+    setState(() => _errorEmail = null);
+
     if (!_formKey.currentState!.validate()) return;
     setState(() => _guardando = true);
+
     try {
+      final emailNuevo = _email.text.trim();
+      final emailCambio = emailNuevo != _usuario!.email;
+
+      if (emailCambio) {
+        final enUso = await AuthService().emailEnUso(emailNuevo);
+        if (enUso) {
+          setState(() {
+            _errorEmail = 'Ya existe una cuenta con ese correo.';
+            _guardando = false;
+          });
+          return;
+        }
+
+        final password = await _pedirPassword();
+        if (password == null || password.isEmpty) {
+          setState(() => _guardando = false);
+          return;
+        }
+
+        await AuthService().cambiarEmail(
+          emailNuevo: emailNuevo,
+          passwordActual: password,
+        );
+
+        if (!mounted) return;
+        await showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: const Text('Verifica tu nuevo correo'),
+            content: Text(
+              'Enviamos un enlace de verificación a $emailNuevo. '
+              'El cambio se aplicará cuando hagas clic en el enlace.',
+            ),
+            actions: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primary,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Entendido'),
+              ),
+            ],
+          ),
+        );
+      }
+
       final actualizado = _usuario!.copyWith(
         nombre: _nombre.text.trim(),
-        email: _email.text.trim(),
+        email: emailCambio ? _usuario!.email : emailNuevo,
         telefono: _telefono.text.trim(),
         carrera: _carrera.text.trim(),
         semestre: _semestre.text.trim(),
         universidad: _universidad.text.trim(),
       );
       await AuthService().actualizarPerfil(actualizado);
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Perfil actualizado correctamente'),
+        SnackBar(
+          content: Text(
+            emailCambio
+                ? 'Perfil guardado. Verifica tu nuevo correo para aplicar el cambio.'
+                : 'Perfil actualizado correctamente.',
+          ),
           backgroundColor: Colors.green,
         ),
       );
       context.pop();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_mensajeError(e.toString())),
-          backgroundColor: Colors.red,
-        ),
-      );
+      final msg = e.toString();
+
+      // Si es error de correo en uso → mostrar inline bajo el campo
+      if (msg.contains('email-already-in-use') ||
+          msg.contains('credential-already-in-use')) {
+        setState(() => _errorEmail = 'Ya existe una cuenta con ese correo.');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_mensajeError(msg)),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _guardando = false);
     }
   }
 
   String _mensajeError(String e) {
-    if (e.contains('email-already-in-use')) return 'Ese correo ya está en uso.';
+    if (e.contains('wrong-password') || e.contains('invalid-credential'))
+      return 'Contraseña incorrecta.';
+    if (e.contains('requires-recent-login'))
+      return 'Sesión expirada. Cierra sesión y vuelve a entrar.';
+    if (e.contains('invalid-email'))
+      return 'El formato del correo no es válido.';
     return 'Error al actualizar. Intenta de nuevo.';
   }
 
@@ -215,7 +349,7 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // ── Avatar con botón de cámara ───────────────────
+                    // ── Avatar ───────────────────────────────────────
                     Center(
                       child: GestureDetector(
                         onTap: _subiendoFoto ? null : _seleccionarFoto,
@@ -225,7 +359,6 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
                             CircleAvatar(
                               radius: 44,
                               backgroundColor: AppTheme.primary,
-                              // Prioridad: 1) preview local, 2) URL de red
                               backgroundImage: _fotoBytes != null
                                   ? MemoryImage(_fotoBytes!)
                                   : tieneFotoRed
@@ -244,8 +377,6 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
                                     )
                                   : null,
                             ),
-
-                            // Overlay cargando
                             if (_subiendoFoto)
                               Container(
                                 width: 88,
@@ -259,8 +390,6 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
                                   strokeWidth: 2.5,
                                 ),
                               ),
-
-                            // Ícono cámara
                             if (!_subiendoFoto)
                               Positioned(
                                 bottom: 0,
@@ -307,17 +436,29 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
                           v == null || v.isEmpty ? 'Campo requerido' : null,
                     ),
                     const SizedBox(height: 12),
+
+                    // ── Campo email con error inline ──────────────────
                     TextFormField(
                       controller: _email,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Correo electrónico *',
-                        prefixIcon: Icon(Icons.email_outlined),
+                        prefixIcon: const Icon(Icons.email_outlined),
+                        // Error inline que se activa desde el catch
+                        errorText: _errorEmail,
+                        errorStyle: const TextStyle(fontSize: 13),
                       ),
                       keyboardType: TextInputType.emailAddress,
+                      onChanged: (_) {
+                        // Limpiar error al escribir de nuevo
+                        if (_errorEmail != null) {
+                          setState(() => _errorEmail = null);
+                        }
+                      },
                       validator: (v) =>
                           v == null || v.isEmpty ? 'Campo requerido' : null,
                     ),
                     const SizedBox(height: 12),
+
                     TextFormField(
                       controller: _telefono,
                       decoration: const InputDecoration(

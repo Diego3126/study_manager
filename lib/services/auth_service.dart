@@ -77,6 +77,7 @@ class AuthService {
     try {
       final uid = _auth.currentUser?.uid;
       if (uid == null) return null;
+      await sincronizarEmail();
       final doc = await _db.collection('usuarios').doc(uid).get();
       if (!doc.exists) return null;
       return Usuario.fromFirestore(uid, doc.data()!);
@@ -178,5 +179,101 @@ class AuthService {
     await _userDoc.update({'fotoPerfil': url});
 
     return url;
+  }
+
+  // ── SUBIR ARCHIVO PDF (CLOUDINARY) ────────────────────────────────────────
+  Future<String> subirArchivoPdf(Uint8List bytes, String nombreArchivo) async {
+    const cloudName = 'dpuave3zd';
+    const uploadPreset = 'StudyManager';
+
+    final nombreSinExtension = nombreArchivo
+        .replaceAll(RegExp(r'\.[^.]+$'), '') // quita extensión
+        .replaceAll(RegExp(r'\s+'), '_') // espacios → guiones bajos
+        .replaceAll(RegExp(r'[^\w\-]'), ''); // elimina caracteres especiales
+
+    final publicId = 'archivos_tareas/$nombreSinExtension';
+
+    final uri = Uri.parse(
+      'https://api.cloudinary.com/v1_1/$cloudName/raw/upload',
+    );
+
+    final request = http.MultipartRequest('POST', uri)
+      ..fields['upload_preset'] = uploadPreset
+      ..fields['public_id'] =
+          publicId // ← nombre original en la URL
+      ..fields['resource_type'] = 'raw'
+      ..files.add(
+        http.MultipartFile.fromBytes('file', bytes, filename: nombreArchivo),
+      );
+
+    final streamed = await request.send();
+    final body = jsonDecode(await streamed.stream.bytesToString());
+
+    if (streamed.statusCode != 200) {
+      throw Exception(body['error']?['message'] ?? 'Error al subir archivo');
+    }
+
+    return body['secure_url'] as String;
+  }
+
+  // ── CAMBIAR EMAIL CON VERIFICACIÓN ────────────────────────────────────────
+  Future<void> cambiarEmail({
+    required String emailNuevo,
+    required String passwordActual,
+  }) async {
+    final user = _auth.currentUser!;
+
+    // Reautenticar primero por seguridad
+    final cred = EmailAuthProvider.credential(
+      email: user.email!,
+      password: passwordActual,
+    );
+    await user.reauthenticateWithCredential(cred);
+
+    // Envía verificación al nuevo correo; solo cambia al hacer clic en el enlace
+    await user.verifyBeforeUpdateEmail(emailNuevo);
+  }
+
+  // ── SINCRONIZAR EMAIL DE AUTH CON FIRESTORE ───────────────────────────────
+  Future<void> sincronizarEmail() async {
+    await _auth.currentUser?.reload();
+    final emailAuth = _auth.currentUser?.email;
+    if (emailAuth == null) return;
+
+    final doc = await _userDoc.get();
+    if (!doc.exists) return;
+
+    final emailFirestore = doc.data()?['email'] as String?;
+
+    if (emailAuth != emailFirestore) {
+      await _userDoc.update({'email': emailAuth});
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('email', emailAuth);
+    }
+  }
+
+  // ── VERIFICAR SI UN EMAIL YA ESTÁ EN USO ─────────────────────────────────
+  Future<bool> emailEnUso(String email) async {
+    try {
+      // Buscar en Firestore si ya existe un documento con ese email
+      final query = await _db
+          .collection('usuarios')
+          .where('email', isEqualTo: email)
+          .limit(1)
+          .get();
+      return query.docs.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // ── VERIFICAR CONTRASEÑA ACTUAL ───────────────────────────────────────────
+  Future<void> verificarPassword(String password) async {
+    final user = _auth.currentUser!;
+    final cred = EmailAuthProvider.credential(
+      email: user.email!,
+      password: password,
+    );
+    await user.reauthenticateWithCredential(cred);
   }
 }

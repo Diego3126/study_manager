@@ -12,10 +12,25 @@ class UniversidadesView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Universidades')),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/universidades/nueva'),
-        icon:  const Icon(Icons.add),
-        label: const Text('Agregar'),
+      floatingActionButton: null, // ← quita el FAB
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+          child: ElevatedButton.icon(
+            onPressed: () => context.push('/universidades/nueva'),
+            icon: const Icon(Icons.add),
+            label: const Text('Agregar universidad'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primary,
+              foregroundColor: Colors.white,
+              minimumSize: const Size(double.infinity, 52),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+              elevation: 2,
+            ),
+          ),
+        ),
       ),
       body: StreamBuilder<List<Universidad>>(
         stream: UniversidadService().getStream(),
@@ -24,9 +39,7 @@ class UniversidadesView extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(
-              child: Text('Error: ${snapshot.error}'),
-            );
+            return Center(child: Text('Error: ${snapshot.error}'));
           }
           final unis = snapshot.data ?? [];
           if (unis.isEmpty) {
@@ -34,24 +47,29 @@ class UniversidadesView extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.account_balance_outlined,
-                      size: 64, color: Colors.grey),
+                  Icon(
+                    Icons.account_balance_outlined,
+                    size: 64,
+                    color: Colors.grey,
+                  ),
                   SizedBox(height: 12),
-                  Text('No hay universidades registradas',
-                      style: TextStyle(color: Colors.grey)),
+                  Text(
+                    'No hay universidades registradas',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                   SizedBox(height: 8),
-                  Text('Toca el botón + para agregar una',
-                      style: TextStyle(
-                          color: Colors.grey, fontSize: 12)),
+                  Text(
+                    'Toca el botón + para agregar una',
+                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
                 ],
               ),
             );
           }
           return ListView.builder(
-            padding:    const EdgeInsets.all(12),
-            itemCount:  unis.length,
-            itemBuilder: (context, i) =>
-                _UniversidadCard(universidad: unis[i]),
+            padding: const EdgeInsets.all(12),
+            itemCount: unis.length,
+            itemBuilder: (context, i) => _UniversidadCard(universidad: unis[i]),
           );
         },
       ),
@@ -72,7 +90,7 @@ class _UniversidadCard extends StatelessWidget {
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title:   const Text('Eliminar universidad'),
+        title: const Text('Eliminar universidad'),
         content: Text('¿Eliminar "${universidad.nombre}"?'),
         actions: [
           TextButton(
@@ -81,8 +99,7 @@ class _UniversidadCard extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Eliminar',
-                style: TextStyle(color: Colors.red)),
+            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -104,35 +121,44 @@ class _UniversidadCard extends StatelessWidget {
               children: [
                 const CircleAvatar(
                   backgroundColor: AppTheme.primary,
-                  child: Icon(Icons.account_balance,
-                      color: Colors.white, size: 20),
+                  child: Icon(
+                    Icons.account_balance,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(universidad.nombre,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize:   16)),
-                      Text('NIT: ${universidad.nit}',
-                          style: const TextStyle(
-                              color: Colors.grey, fontSize: 12)),
+                      Text(
+                        universidad.nombre,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        'NIT: ${universidad.nit}',
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 IconButton(
-                  icon:    const Icon(Icons.delete_outline,
-                      color: Colors.red),
+                  icon: const Icon(Icons.delete_outline, color: Colors.red),
                   onPressed: () => _eliminar(context),
                 ),
               ],
             ),
             const Divider(height: 20),
-            _Fila(Icons.location_on_outlined,  universidad.direccion),
+            _Fila(Icons.location_on_outlined, universidad.direccion),
             const SizedBox(height: 6),
-            _Fila(Icons.phone_outlined,         universidad.telefono),
+            _Fila(Icons.phone_outlined, universidad.telefono),
             const SizedBox(height: 6),
             GestureDetector(
               onTap: () => _abrirUrl(universidad.paginaWeb),
@@ -151,8 +177,8 @@ class _UniversidadCard extends StatelessWidget {
 
 class _Fila extends StatelessWidget {
   final IconData icono;
-  final String   texto;
-  final Color?   color;
+  final String texto;
+  final Color? color;
   const _Fila(this.icono, this.texto, {this.color});
 
   @override
@@ -162,10 +188,10 @@ class _Fila extends StatelessWidget {
         Icon(icono, size: 16, color: color ?? Colors.grey),
         const SizedBox(width: 8),
         Flexible(
-          child: Text(texto,
-              style: TextStyle(
-                  fontSize: 13,
-                  color:    color ?? Colors.black87)),
+          child: Text(
+            texto,
+            style: TextStyle(fontSize: 13, color: color ?? Colors.black87),
+          ),
         ),
       ],
     );
