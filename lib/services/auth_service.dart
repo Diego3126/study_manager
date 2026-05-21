@@ -146,7 +146,8 @@ class AuthService {
     await _auth.sendPasswordResetEmail(email: email);
   }
 
-  // ── SUBIR FOTO DE PERFIL (CLOUDINARY) ────────────────────────────────────
+  // ── SUBIR FOTO DE PERFIL (CLOUDINARY) ─────────────────────────────────────
+  // Solo se llama al confirmar "Guardar cambios" en editar_perfil_view.dart
   Future<String> subirFotoPerfil(Uint8List bytes) async {
     const cloudName = 'dpuave3zd';
     const uploadPreset = 'StudyManager';
@@ -175,10 +176,42 @@ class AuthService {
 
     final url = body['secure_url'] as String;
 
-    // Guardar URL en Firestore
+    // Guarda URL en Firestore — solo desde editar perfil
     await _userDoc.update({'fotoPerfil': url});
 
     return url;
+  }
+
+  // ── SUBIR IMAGEN DE TAREA (CLOUDINARY) ────────────────────────────────────
+  Future<String> subirImagenTarea(Uint8List bytes) async {
+    const cloudName = 'dpuave3zd';
+    const uploadPreset = 'StudyManager';
+
+    final uri = Uri.parse(
+      'https://api.cloudinary.com/v1_1/$cloudName/image/upload',
+    );
+
+    final request = http.MultipartRequest('POST', uri)
+      ..fields['upload_preset'] = uploadPreset
+      ..fields['folder'] =
+          'imagenes_tareas' // carpeta separada
+      ..files.add(
+        http.MultipartFile.fromBytes(
+          'file',
+          bytes,
+          filename: '${DateTime.now().millisecondsSinceEpoch}.jpg',
+        ),
+      );
+
+    final streamed = await request.send();
+    final body = jsonDecode(await streamed.stream.bytesToString());
+
+    if (streamed.statusCode != 200) {
+      throw Exception(body['error']?['message'] ?? 'Error al subir imagen');
+    }
+
+    // Solo retorna la URL, no modifica ningún documento de Firestore
+    return body['secure_url'] as String;
   }
 
   // ── SUBIR ARCHIVO PDF (CLOUDINARY) ────────────────────────────────────────
@@ -187,9 +220,9 @@ class AuthService {
     const uploadPreset = 'StudyManager';
 
     final nombreSinExtension = nombreArchivo
-        .replaceAll(RegExp(r'\.[^.]+$'), '') // quita extensión
-        .replaceAll(RegExp(r'\s+'), '_') // espacios → guiones bajos
-        .replaceAll(RegExp(r'[^\w\-]'), ''); // elimina caracteres especiales
+        .replaceAll(RegExp(r'\.[^.]+$'), '')
+        .replaceAll(RegExp(r'\s+'), '_')
+        .replaceAll(RegExp(r'[^\w\-]'), '');
 
     final publicId = 'archivos_tareas/$nombreSinExtension';
 
@@ -199,8 +232,7 @@ class AuthService {
 
     final request = http.MultipartRequest('POST', uri)
       ..fields['upload_preset'] = uploadPreset
-      ..fields['public_id'] =
-          publicId // ← nombre original en la URL
+      ..fields['public_id'] = publicId
       ..fields['resource_type'] = 'raw'
       ..files.add(
         http.MultipartFile.fromBytes('file', bytes, filename: nombreArchivo),
