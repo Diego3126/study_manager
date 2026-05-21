@@ -26,10 +26,15 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
 
   bool _cargando = true;
   bool _guardando = false;
-  bool _subiendoFoto = false;
-  String? _errorEmail; // ← error inline del campo email
+  String? _errorEmail;
   Usuario? _usuario;
+
+  // ── Foto: solo bytes en memoria hasta que el usuario guarde ──────────────
+  // _fotoBytes     → preview local (nueva foto seleccionada, aún no subida)
+  // _fotoUrlActual → URL de Cloudinary ya guardada (la del perfil vigente)
   Uint8List? _fotoBytes;
+  String? _fotoUrlActual;
+  bool _fotoModificada = false; // true si el usuario cambió la foto
 
   List<Universidad> _universidades = [];
   bool _cargandoUnis = false;
@@ -51,6 +56,7 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
       _carrera.text = u.carrera;
       _semestre.text = u.semestre;
       _universidad.text = u.universidad;
+      _fotoUrlActual = u.fotoPerfil;
     }
     setState(() => _cargandoUnis = true);
     final unis = await UniversidadService().getAll();
@@ -63,7 +69,7 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
     });
   }
 
-  // ── Seleccionar y subir foto ──────────────────────────────────────────
+  // ── Seleccionar foto — solo preview local, NO sube aún ───────────────────
   Future<void> _seleccionarFoto() async {
     final fuente = await showModalBottomSheet<ImageSource>(
       context: context,
@@ -121,49 +127,32 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
       return;
     }
 
+    // Solo guardamos en memoria — no se sube nada hasta _guardar()
     setState(() {
       _fotoBytes = bytes;
-      _subiendoFoto = true;
+      _fotoModificada = true;
     });
-
-    try {
-      final nuevaUrl = await AuthService().subirFotoPerfil(bytes);
-      if (!mounted) return;
-      setState(() {
-        _usuario = _usuario?.copyWith(fotoPerfil: nuevaUrl);
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Foto actualizada correctamente.'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _fotoBytes = null);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al subir la foto: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _subiendoFoto = false);
-    }
   }
 
-  // ── Pedir contraseña para confirmar cambio de email ───────────────────
+  // ── Descartar foto nueva (volver a la original) ───────────────────────────
+  void _descartarFoto() {
+    setState(() {
+      _fotoBytes = null;
+      _fotoModificada = false;
+    });
+  }
+
+  // ── Pedir contraseña para cambio de email ────────────────────────────────
   Future<String?> _pedirPassword() async {
     final controller = TextEditingController();
-    bool _oculta = true;
+    bool oculta = true;
 
     return showDialog<String>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setS) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: const Text('Confirmar cambio de correo'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -175,17 +164,15 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
               const SizedBox(height: 16),
               TextField(
                 controller: controller,
-                obscureText: _oculta,
+                obscureText: oculta,
                 decoration: InputDecoration(
                   labelText: 'Contraseña actual',
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
-                    icon: Icon(
-                      _oculta
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                    ),
-                    onPressed: () => setS(() => _oculta = !_oculta),
+                    icon: Icon(oculta
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined),
+                    onPressed: () => setS(() => oculta = !oculta),
                   ),
                 ),
               ),
@@ -210,11 +197,9 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
     );
   }
 
-  // ── Guardar cambios ───────────────────────────────────────────────────
+  // ── Guardar — aquí sí se sube la foto si fue modificada ──────────────────
   Future<void> _guardar() async {
-    // Limpiar error de email antes de intentar
     setState(() => _errorEmail = null);
-
     if (!_formKey.currentState!.validate()) return;
     setState(() => _guardando = true);
 
@@ -248,8 +233,7 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
           context: context,
           builder: (_) => AlertDialog(
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
+                borderRadius: BorderRadius.circular(16)),
             title: const Text('Verifica tu nuevo correo'),
             content: Text(
               'Enviamos un enlace de verificación a $emailNuevo. '
@@ -269,6 +253,12 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
         );
       }
 
+      // ✅ Subir foto SOLO si fue modificada y al momento de guardar
+      String? nuevaFotoUrl = _fotoUrlActual;
+      if (_fotoModificada && _fotoBytes != null) {
+        nuevaFotoUrl = await AuthService().subirFotoPerfil(_fotoBytes!);
+      }
+
       final actualizado = _usuario!.copyWith(
         nombre: _nombre.text.trim(),
         email: emailCambio ? _usuario!.email : emailNuevo,
@@ -276,6 +266,7 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
         carrera: _carrera.text.trim(),
         semestre: _semestre.text.trim(),
         universidad: _universidad.text.trim(),
+        fotoPerfil: nuevaFotoUrl,
       );
       await AuthService().actualizarPerfil(actualizado);
 
@@ -294,8 +285,6 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
     } catch (e) {
       if (!mounted) return;
       final msg = e.toString();
-
-      // Si es error de correo en uso → mostrar inline bajo el campo
       if (msg.contains('email-already-in-use') ||
           msg.contains('credential-already-in-use')) {
         setState(() => _errorEmail = 'Ya existe una cuenta con ese correo.');
@@ -335,8 +324,7 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
 
   @override
   Widget build(BuildContext context) {
-    final fotoUrl = _usuario?.fotoPerfil;
-    final tieneFotoRed = fotoUrl != null && fotoUrl.isNotEmpty;
+    final tieneFotoRed = _fotoUrlActual != null && _fotoUrlActual!.isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Editar Perfil')),
@@ -349,77 +337,91 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // ── Avatar ───────────────────────────────────────
+                    // ── Avatar con preview local ──────────────────────
                     Center(
-                      child: GestureDetector(
-                        onTap: _subiendoFoto ? null : _seleccionarFoto,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            CircleAvatar(
-                              radius: 44,
-                              backgroundColor: AppTheme.primary,
-                              backgroundImage: _fotoBytes != null
-                                  ? MemoryImage(_fotoBytes!)
-                                  : tieneFotoRed
-                                  ? NetworkImage(fotoUrl!) as ImageProvider
-                                  : null,
-                              child: (_fotoBytes == null && !tieneFotoRed)
-                                  ? Text(
-                                      _nombre.text.isNotEmpty
-                                          ? _nombre.text[0].toUpperCase()
-                                          : 'U',
-                                      style: const TextStyle(
-                                        fontSize: 34,
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    )
-                                  : null,
+                      child: Column(
+                        children: [
+                          GestureDetector(
+                            onTap: _seleccionarFoto,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                CircleAvatar(
+                                  radius: 44,
+                                  backgroundColor: AppTheme.primary,
+                                  backgroundImage: _fotoBytes != null
+                                      ? MemoryImage(_fotoBytes!)
+                                      : tieneFotoRed
+                                          ? NetworkImage(_fotoUrlActual!)
+                                              as ImageProvider
+                                          : null,
+                                  child: (_fotoBytes == null && !tieneFotoRed)
+                                      ? Text(
+                                          _nombre.text.isNotEmpty
+                                              ? _nombre.text[0].toUpperCase()
+                                              : 'U',
+                                          style: const TextStyle(
+                                            fontSize: 34,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        )
+                                      : null,
+                                ),
+                                Positioned(
+                                  bottom: 0,
+                                  right: 0,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(5),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.camera_alt_rounded,
+                                      size: 16,
+                                      color: AppTheme.primary,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                            if (_subiendoFoto)
-                              Container(
-                                width: 88,
-                                height: 88,
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.45),
-                                  shape: BoxShape.circle,
+                          ),
+                          const SizedBox(height: 6),
+                          // Si hay foto nueva en preview, mostrar opción de descartarla
+                          if (_fotoModificada)
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.info_outline,
+                                    size: 13, color: AppTheme.primary),
+                                const SizedBox(width: 4),
+                                const Text(
+                                  'Nueva foto (preview)',
+                                  style: TextStyle(
+                                      fontSize: 12, color: AppTheme.primary),
                                 ),
-                                child: const CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2.5,
-                                ),
-                              ),
-                            if (!_subiendoFoto)
-                              Positioned(
-                                bottom: 0,
-                                right: 0,
-                                child: Container(
-                                  padding: const EdgeInsets.all(5),
-                                  decoration: const BoxDecoration(
-                                    color: Colors.white,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    Icons.camera_alt_rounded,
-                                    size: 16,
-                                    color: AppTheme.primary,
+                                const SizedBox(width: 8),
+                                GestureDetector(
+                                  onTap: _descartarFoto,
+                                  child: Text(
+                                    'Descartar',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: AppTheme.danger,
+                                      decoration: TextDecoration.underline,
+                                    ),
                                   ),
                                 ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 6),
-                    Center(
-                      child: Text(
-                        'Toca para cambiar foto',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade500,
-                        ),
+                              ],
+                            )
+                          else
+                            Text(
+                              'Toca para cambiar foto',
+                              style: TextStyle(
+                                  fontSize: 12, color: Colors.grey.shade500),
+                            ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -437,19 +439,16 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
                     ),
                     const SizedBox(height: 12),
 
-                    // ── Campo email con error inline ──────────────────
                     TextFormField(
                       controller: _email,
                       decoration: InputDecoration(
                         labelText: 'Correo electrónico *',
                         prefixIcon: const Icon(Icons.email_outlined),
-                        // Error inline que se activa desde el catch
                         errorText: _errorEmail,
                         errorStyle: const TextStyle(fontSize: 13),
                       ),
                       keyboardType: TextInputType.emailAddress,
                       onChanged: (_) {
-                        // Limpiar error al escribir de nuevo
                         if (_errorEmail != null) {
                           setState(() => _errorEmail = null);
                         }
@@ -491,44 +490,45 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
                     _cargandoUnis
                         ? const Center(child: CircularProgressIndicator())
                         : _universidades.isEmpty
-                        ? TextFormField(
-                            controller: _universidad,
-                            decoration: const InputDecoration(
-                              labelText: 'Universidad',
-                              prefixIcon: Icon(Icons.account_balance_outlined),
-                              hintText: 'No hay universidades registradas aún',
-                            ),
-                          )
-                        : DropdownButtonFormField<String>(
-                            value: _universidad.text.isEmpty
-                                ? null
-                                : _universidades.any(
-                                    (u) => u.nombre == _universidad.text,
-                                  )
-                                ? _universidad.text
-                                : null,
-                            decoration: const InputDecoration(
-                              labelText: 'Universidad',
-                              prefixIcon: Icon(Icons.account_balance_outlined),
-                            ),
-                            hint: const Text('Selecciona tu universidad'),
-                            items: _universidades
-                                .map(
-                                  (u) => DropdownMenuItem(
-                                    value: u.nombre,
-                                    child: Text(
-                                      u.nombre,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: (v) =>
-                                setState(() => _universidad.text = v ?? ''),
-                          ),
+                            ? TextFormField(
+                                controller: _universidad,
+                                decoration: const InputDecoration(
+                                  labelText: 'Universidad',
+                                  prefixIcon:
+                                      Icon(Icons.account_balance_outlined),
+                                  hintText:
+                                      'No hay universidades registradas aún',
+                                ),
+                              )
+                            : DropdownButtonFormField<String>(
+                                value: _universidad.text.isEmpty
+                                    ? null
+                                    : _universidades.any(
+                                            (u) =>
+                                                u.nombre == _universidad.text)
+                                        ? _universidad.text
+                                        : null,
+                                decoration: const InputDecoration(
+                                  labelText: 'Universidad',
+                                  prefixIcon:
+                                      Icon(Icons.account_balance_outlined),
+                                ),
+                                hint: const Text('Selecciona tu universidad'),
+                                items: _universidades
+                                    .map(
+                                      (u) => DropdownMenuItem(
+                                        value: u.nombre,
+                                        child: Text(u.nombre,
+                                            overflow: TextOverflow.ellipsis),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: (v) =>
+                                    setState(() => _universidad.text = v ?? ''),
+                              ),
                     const SizedBox(height: 28),
 
-                    // ── Botón guardar ─────────────────────────────────
+                    // ── Botones guardar / cancelar ────────────────────
                     ElevatedButton.icon(
                       onPressed: _guardando ? null : _guardar,
                       icon: _guardando
@@ -536,21 +536,35 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
                               width: 18,
                               height: 18,
                               child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
+                                  strokeWidth: 2, color: Colors.white),
                             )
                           : const Icon(Icons.save_outlined),
-                      label: Text(
-                        _guardando ? 'Guardando...' : 'Guardar cambios',
-                      ),
+                      label:
+                          Text(_guardando ? 'Guardando...' : 'Guardar cambios'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primary,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30)),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
+
+                    // ✅ Botón cancelar — descarta todo y regresa
+                    OutlinedButton.icon(
+                      onPressed: _guardando ? null : () => context.pop(),
+                      icon: const Icon(Icons.close_rounded),
+                      label: const Text('Cancelar'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF1A1A2E),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30)),
+                        side: BorderSide(color: Colors.grey.shade300),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),

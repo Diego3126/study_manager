@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../models/tarea_model.dart';
 import '../../services/tarea_service.dart';
 import '../../themes/app_theme.dart';
@@ -391,7 +394,7 @@ class _TareaDetalleViewState extends State<TareaDetalleView> {
     );
   }
 
-  // ── Miniaturas horizontales (zona roja del screenshot) ────────────────────
+  // ── Miniaturas horizontales ────────────────────
   Widget _buildMiniaturas(List<String> imagenes) {
     if (imagenes.length <= 1) return const SizedBox();
 
@@ -478,6 +481,15 @@ class _TareaDetalleViewState extends State<TareaDetalleView> {
           ),
           _buildDivider(),
           _buildFilaInfo(
+            icono: Icons.access_time_rounded,
+            label: 'Hora de vencimiento',
+            valor: tarea.horaEntrega != null
+                ? '${tarea.horaEntrega!.hour.toString().padLeft(2, '0')}:${tarea.horaEntrega!.minute.toString().padLeft(2, '0')}'
+                : 'Sin hora definida',
+            iconColor: AppTheme.secondary,
+          ),
+          _buildDivider(),
+          _buildFilaInfo(
             icono: Icons.category_outlined,
             label: 'Tipo',
             valor: tarea.tipo,
@@ -545,15 +557,69 @@ class _TareaDetalleViewState extends State<TareaDetalleView> {
     return bonito.toLowerCase().endsWith('.pdf') ? bonito : '$bonito.pdf';
   }
 
-  // ── Abre el PDF en el navegador o app externa ─────────────────────────────
+  // ── Descarga el PDF y lo abre con la app predeterminada ──────────────────
   Future<void> _abrirPdf(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
+    // Mostrar indicador de descarga
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Row(
+          children: [
+            SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            ),
+            SizedBox(width: 14),
+            Text('Descargando archivo...'),
+          ],
+        ),
+        duration: Duration(seconds: 30),
+      ),
+    );
+
+    try {
+      // Descargar bytes directamente desde Cloudinary
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode != 200) {
+        throw Exception('HTTP ${response.statusCode}');
+      }
+
+      // Guardar en directorio temporal del dispositivo
+      final dir = await getTemporaryDirectory();
+      final nombre = _nombrePdf(url);
+      final archivo = File('${dir.path}/$nombre');
+      await archivo.writeAsBytes(response.bodyBytes);
+
       if (!mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+      // Abrir con la app predeterminada (Adobe, Files, etc.)
+      final resultado = await OpenFilex.open(archivo.path);
+
+      if (resultado.type != ResultType.done && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              resultado.type == ResultType.noAppToOpen
+                  ? 'No hay app instalada para abrir PDFs'
+                  : 'No se pudo abrir el archivo',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se pudo abrir el archivo')),
+        SnackBar(
+          content: Text('Error al descargar: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }

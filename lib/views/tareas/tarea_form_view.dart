@@ -23,14 +23,16 @@ class _TareaFormViewState extends State<TareaFormView> {
   final _descripcion = TextEditingController();
 
   String _materia = AppConfig.materias.first;
+  String _otraMateria = '';
   String _tipo = AppConfig.tiposTarea.first;
   String _prioridad = AppConfig.prioridades[1];
   DateTime _fecha = DateTime.now().add(const Duration(days: 1));
+  TimeOfDay? _hora;
   bool _guardando = false;
   bool _cargando = false;
 
-  // Archivos adjuntos
   final List<_Adjunto> _adjuntos = [];
+  final List<String> _archivosExistentes = [];
 
   bool get _esEdicion => widget.id != null;
 
@@ -48,10 +50,13 @@ class _TareaFormViewState extends State<TareaFormView> {
       setState(() {
         _titulo.text = t.titulo;
         _descripcion.text = t.descripcion;
-        _materia = t.materia;
+        _materia = AppConfig.materias.contains(t.materia) ? t.materia : 'Otra';
+        _otraMateria = AppConfig.materias.contains(t.materia) ? '' : t.materia;
         _tipo = t.tipo;
         _prioridad = t.prioridad;
         _fecha = t.fechaEntrega;
+        _hora = t.horaEntrega;
+        _archivosExistentes.addAll(t.archivos);
         _cargando = false;
       });
     } catch (_) {
@@ -60,7 +65,82 @@ class _TareaFormViewState extends State<TareaFormView> {
     }
   }
 
-  // ── Seleccionar archivo o imagen ─────────────────────────────────────────
+  Future<void> _seleccionarMateria() async {
+    await _mostrarSheet<String>(
+      titulo: 'Selecciona una materia',
+      opciones: AppConfig.materias,
+      seleccionado: _materia,
+      etiqueta: (m) => m,
+      leading: (_) => const Icon(Icons.book_outlined, color: AppTheme.primary),
+      onSeleccion: (v) => setState(() => _materia = v),
+    );
+
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    if (_materia == 'Otra' && mounted) {
+      await _mostrarDialogoOtraMateria();
+    }
+  }
+
+  Future<void> _mostrarDialogoOtraMateria() async {
+    final controller = TextEditingController(text: _otraMateria);
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          '¿Cuál es la materia?',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1A1A2E),
+          ),
+        ),
+        content: TextField(
+          controller: controller,
+          autofocus: false, // ← sin autofocus
+          textCapitalization: TextCapitalization.sentences,
+          decoration: InputDecoration(
+            hintText: 'Ej: Cálculo diferencial',
+            prefixIcon: const Icon(Icons.book_outlined),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              setState(() => _materia = AppConfig.materias.first);
+              Navigator.of(context).pop();
+            },
+            child: Text(
+              'Cancelar',
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final texto = controller.text.trim();
+              if (texto.isNotEmpty) {
+                setState(() => _otraMateria = texto);
+              }
+              Navigator.of(context).pop();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+            child: const Text('Confirmar'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+  }
+
   Future<void> _agregarAdjunto() async {
     final opcion = await showModalBottomSheet<String>(
       context: context,
@@ -137,7 +217,7 @@ class _TareaFormViewState extends State<TareaFormView> {
       );
       if (result == null || result.files.isEmpty) return;
       final file = result.files.first;
-      if ((file.size) > 5 * 1024 * 1024) {
+      if (file.size > 5 * 1024 * 1024) {
         if (!mounted) return;
         _mostrarError('El archivo supera el límite de 5 MB');
         return;
@@ -160,7 +240,6 @@ class _TareaFormViewState extends State<TareaFormView> {
     ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
   }
 
-  // ── Sheet genérico para seleccionar opción ───────────────────────────────
   Future<void> _mostrarSheet<T>({
     required String titulo,
     required List<T> opciones,
@@ -243,7 +322,6 @@ class _TareaFormViewState extends State<TareaFormView> {
     );
   }
 
-  // ── Diálogos de confirmación y éxito ────────────────────────────────────
   Future<bool> _mostrarConfirmacion() async {
     return await showModalBottomSheet<bool>(
           context: context,
@@ -401,7 +479,6 @@ class _TareaFormViewState extends State<TareaFormView> {
     );
   }
 
-  // ── Guardar ──────────────────────────────────────────────────────────────
   Future<void> _guardar() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -411,13 +488,17 @@ class _TareaFormViewState extends State<TareaFormView> {
     setState(() => _guardando = true);
     try {
       final List<String> urlsAdjuntos = [];
-      // Subir adjuntos a Cloudinary
+
+      // Conserva los archivos que ya estaban
+      urlsAdjuntos.addAll(_archivosExistentes);
+
+      // Sube y agrega los nuevos
       for (final adj in _adjuntos) {
         final String url;
         if (adj.tipo == _TipoAdjunto.pdf) {
           url = await AuthService().subirArchivoPdf(adj.bytes, adj.nombre);
         } else {
-          url = await AuthService().subirFotoPerfil(adj.bytes);
+          url = await AuthService().subirImagenTarea(adj.bytes);
         }
         urlsAdjuntos.add(url);
       }
@@ -426,10 +507,13 @@ class _TareaFormViewState extends State<TareaFormView> {
         firestoreId: widget.id,
         titulo: _titulo.text.trim(),
         descripcion: _descripcion.text.trim(),
-        materia: _materia,
+        materia: _materia == 'Otra' && _otraMateria.isNotEmpty
+            ? _otraMateria // ← guarda el nombre real
+            : _materia,
         tipo: _tipo,
         prioridad: _prioridad,
         fechaEntrega: _fecha,
+        horaEntrega: _hora,
         archivos: urlsAdjuntos,
       );
 
@@ -456,7 +540,6 @@ class _TareaFormViewState extends State<TareaFormView> {
     super.dispose();
   }
 
-  // ── Campo selector (reemplaza los DropdownButtonFormField) ───────────────
   Widget _campoSelector({
     required String label,
     required String valor,
@@ -580,9 +663,12 @@ class _TareaFormViewState extends State<TareaFormView> {
                               child: ListView(
                                 scrollDirection: Axis.horizontal,
                                 children: [
-                                  // Botón agregar
+                                  // ── Botón agregar ──────────────
                                   GestureDetector(
-                                    onTap: _adjuntos.length < 3
+                                    onTap:
+                                        (_adjuntos.length +
+                                                _archivosExistentes.length) <
+                                            3
                                         ? _agregarAdjunto
                                         : null,
                                     child: Container(
@@ -603,14 +689,104 @@ class _TareaFormViewState extends State<TareaFormView> {
                                       ),
                                       child: Icon(
                                         Icons.add_rounded,
-                                        color: _adjuntos.length < 3
+                                        color:
+                                            (_adjuntos.length +
+                                                    _archivosExistentes
+                                                        .length) <
+                                                3
                                             ? AppTheme.primary
                                             : Colors.grey,
                                         size: 32,
                                       ),
                                     ),
                                   ),
-                                  // Adjuntos agregados
+
+                                  // ── Archivos existentes (edición) ──
+                                  ..._archivosExistentes.asMap().entries.map((
+                                    e,
+                                  ) {
+                                    final i = e.key;
+                                    final url = e.value;
+                                    final esImagen =
+                                        url.toLowerCase().contains(
+                                          '/image/upload/',
+                                        ) ||
+                                        url.toLowerCase().endsWith('.jpg') ||
+                                        url.toLowerCase().endsWith('.jpeg') ||
+                                        url.toLowerCase().endsWith('.png');
+                                    return Stack(
+                                      children: [
+                                        Container(
+                                          width: 80,
+                                          height: 80,
+                                          margin: const EdgeInsets.only(
+                                            right: 10,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey.shade200,
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                          child: esImagen
+                                              ? ClipRRect(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  child: Image.network(
+                                                    url,
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                                )
+                                              : Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    const Icon(
+                                                      Icons
+                                                          .picture_as_pdf_rounded,
+                                                      color: Colors.red,
+                                                      size: 28,
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    const Text(
+                                                      'PDF',
+                                                      style: TextStyle(
+                                                        fontSize: 9,
+                                                      ),
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                    ),
+                                                  ],
+                                                ),
+                                        ),
+                                        Positioned(
+                                          top: 0,
+                                          right: 8,
+                                          child: GestureDetector(
+                                            onTap: () => setState(
+                                              () => _archivosExistentes
+                                                  .removeAt(i),
+                                            ),
+                                            child: Container(
+                                              width: 20,
+                                              height: 20,
+                                              decoration: const BoxDecoration(
+                                                color: Colors.red,
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: const Icon(
+                                                Icons.close,
+                                                size: 12,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  }),
+
+                                  // ── Archivos nuevos ────────────
                                   ..._adjuntos.asMap().entries.map((e) {
                                     final i = e.key;
                                     final adj = e.value;
@@ -722,20 +898,12 @@ class _TareaFormViewState extends State<TareaFormView> {
                             // Materia
                             _campoSelector(
                               label: 'Materia *',
-                              valor: _materia,
+                              valor:
+                                  _materia == 'Otra' && _otraMateria.isNotEmpty
+                                  ? _otraMateria
+                                  : _materia,
                               icono: Icons.book_outlined,
-                              onTap: () => _mostrarSheet<String>(
-                                titulo: 'Selecciona una materia',
-                                opciones: AppConfig.materias,
-                                seleccionado: _materia,
-                                etiqueta: (m) => m,
-                                leading: (_) => const Icon(
-                                  Icons.book_outlined,
-                                  color: AppTheme.primary,
-                                ),
-                                onSeleccion: (v) =>
-                                    setState(() => _materia = v),
-                              ),
+                              onTap: _seleccionarMateria,
                             ),
                             const SizedBox(height: 12),
 
@@ -847,7 +1015,97 @@ class _TareaFormViewState extends State<TareaFormView> {
                                 ),
                               ),
                             ),
+                            const SizedBox(height: 12),
 
+                            // Hora de vencimiento
+                            GestureDetector(
+                              onTap: () async {
+                                final picked = await showTimePicker(
+                                  context: context,
+                                  initialTime: _hora ?? TimeOfDay.now(),
+                                  builder: (context, child) {
+                                    return MediaQuery(
+                                      data: MediaQuery.of(
+                                        context,
+                                      ).copyWith(alwaysUse24HourFormat: true),
+                                      child: child!,
+                                    );
+                                  },
+                                );
+                                if (picked != null) {
+                                  setState(() => _hora = picked);
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 14,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade50,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: Colors.grey.shade400,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.access_time_rounded,
+                                      color: Colors.grey.shade600,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Hora de vencimiento',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.grey.shade500,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            _hora != null
+                                                ? '${_hora!.hour.toString().padLeft(2, '0')}:${_hora!.minute.toString().padLeft(2, '0')}'
+                                                : 'Sin hora definida',
+                                            style: TextStyle(
+                                              fontSize: 15,
+                                              color: _hora != null
+                                                  ? const Color(0xFF1A1A2E)
+                                                  : Colors.grey.shade400,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Row(
+                                      children: [
+                                        if (_hora != null)
+                                          GestureDetector(
+                                            onTap: () =>
+                                                setState(() => _hora = null),
+                                            child: Icon(
+                                              Icons.close_rounded,
+                                              color: Colors.grey.shade400,
+                                              size: 18,
+                                            ),
+                                          ),
+                                        const SizedBox(width: 4),
+                                        Icon(
+                                          Icons.keyboard_arrow_down_rounded,
+                                          color: Colors.grey.shade500,
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                             const SizedBox(height: 28),
 
                             // Botón guardar
