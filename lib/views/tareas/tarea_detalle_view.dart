@@ -71,10 +71,8 @@ class _TareaDetalleViewState extends State<TareaDetalleView> {
           imagenes: imagenes,
           indiceInicial: indiceInicial,
         ),
-        transitionsBuilder: (_, animation, __, child) => FadeTransition(
-          opacity: animation,
-          child: child,
-        ),
+        transitionsBuilder: (_, animation, __, child) =>
+            FadeTransition(opacity: animation, child: child),
       ),
     );
   }
@@ -101,16 +99,20 @@ class _TareaDetalleViewState extends State<TareaDetalleView> {
                 color: AppTheme.danger.withOpacity(0.12),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.delete_outline_rounded,
-                  color: AppTheme.danger, size: 32),
+              child: const Icon(
+                Icons.delete_outline_rounded,
+                color: AppTheme.danger,
+                size: 32,
+              ),
             ),
             const SizedBox(height: 16),
             const Text(
               'Eliminar tarea',
               style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A2E)),
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1A1A2E),
+              ),
             ),
             const SizedBox(height: 8),
             Text(
@@ -128,7 +130,8 @@ class _TareaDetalleViewState extends State<TareaDetalleView> {
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30)),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
                 ),
                 child: const Text('Sí, eliminar'),
               ),
@@ -141,11 +144,14 @@ class _TareaDetalleViewState extends State<TareaDetalleView> {
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30)),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
                   side: BorderSide(color: Colors.grey.shade300),
                 ),
-                child: const Text('Cancelar',
-                    style: TextStyle(color: Color(0xFF1A1A2E))),
+                child: const Text(
+                  'Cancelar',
+                  style: TextStyle(color: Color(0xFF1A1A2E)),
+                ),
               ),
             ),
           ],
@@ -191,7 +197,10 @@ class _TareaDetalleViewState extends State<TareaDetalleView> {
           title: const Text(
             'Detalle',
             style: TextStyle(
-                color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           centerTitle: true,
           actions: [
@@ -203,22 +212,21 @@ class _TareaDetalleViewState extends State<TareaDetalleView> {
               },
             ),
             IconButton(
-              icon: const Icon(Icons.delete_outline_rounded, color: Colors.white),
+              icon: const Icon(
+                Icons.delete_outline_rounded,
+                color: Colors.white,
+              ),
               onPressed: _eliminar,
             ),
           ],
           flexibleSpace: tieneImagenes
-              ? FlexibleSpaceBar(
-                  background: _buildImagenExhibicion(imagenes),
-                )
+              ? FlexibleSpaceBar(background: _buildImagenExhibicion(imagenes))
               : null,
         ),
 
         // ── Miniaturas de imágenes (zona roja) ───────────────────────────
         if (tieneImagenes)
-          SliverToBoxAdapter(
-            child: _buildMiniaturas(imagenes),
-          ),
+          SliverToBoxAdapter(child: _buildMiniaturas(imagenes)),
 
         // ── Contenido principal ───────────────────────────────────────────
         SliverToBoxAdapter(
@@ -232,8 +240,10 @@ class _TareaDetalleViewState extends State<TareaDetalleView> {
                   children: [
                     _buildChip(tarea.tipo, AppTheme.colorTipo(tarea.tipo)),
                     const SizedBox(width: 8),
-                    _buildChip('Prioridad ${tarea.prioridad}',
-                        AppTheme.colorPrioridad(tarea.prioridad)),
+                    _buildChip(
+                      'Prioridad ${tarea.prioridad}',
+                      AppTheme.colorPrioridad(tarea.prioridad),
+                    ),
                     const Spacer(),
                     _buildChip(
                       tarea.completada ? 'Completada' : 'Pendiente',
@@ -263,10 +273,6 @@ class _TareaDetalleViewState extends State<TareaDetalleView> {
                 ),
                 const SizedBox(height: 20),
 
-                // Tarjeta info
-                _buildInfoCard(tarea),
-                const SizedBox(height: 16),
-
                 // Descripción
                 if (tarea.descripcion.isNotEmpty) ...[
                   _buildSeccionLabel('Descripción'),
@@ -288,13 +294,18 @@ class _TareaDetalleViewState extends State<TareaDetalleView> {
                     child: Text(
                       tarea.descripcion,
                       style: const TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF444466),
-                          height: 1.6),
+                        fontSize: 14,
+                        color: Color(0xFF444466),
+                        height: 1.6,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
                 ],
+
+                // Tarjeta info
+                _buildInfoCard(tarea),
+                const SizedBox(height: 16),
 
                 // Archivos adjuntos — solo PDFs
                 if (pdfs.isNotEmpty) ...[
@@ -310,22 +321,30 @@ class _TareaDetalleViewState extends State<TareaDetalleView> {
                   child: ElevatedButton.icon(
                     onPressed: () async {
                       await TareaService().marcarCompletada(
-                          tarea.firestoreId!, !tarea.completada);
+                        tarea.firestoreId!,
+                        !tarea.completada,
+                      );
                       _cargar();
                     },
-                    icon: Icon(tarea.completada
-                        ? Icons.undo_rounded
-                        : Icons.check_circle_outline_rounded),
-                    label: Text(tarea.completada
-                        ? 'Marcar como pendiente'
-                        : 'Marcar como completada'),
+                    icon: Icon(
+                      tarea.completada
+                          ? Icons.undo_rounded
+                          : Icons.check_circle_outline_rounded,
+                    ),
+                    label: Text(
+                      tarea.completada
+                          ? 'Marcar como pendiente'
+                          : 'Marcar como completada',
+                    ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          tarea.completada ? Colors.grey.shade400 : AppTheme.accent,
+                      backgroundColor: tarea.completada
+                          ? Colors.grey.shade400
+                          : AppTheme.accent,
                       foregroundColor: Colors.white,
                       minimumSize: const Size(double.infinity, 52),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30)),
+                        borderRadius: BorderRadius.circular(30),
+                      ),
                       elevation: 2,
                     ),
                   ),
@@ -354,8 +373,11 @@ class _TareaDetalleViewState extends State<TareaDetalleView> {
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => Container(
                 color: Colors.grey.shade200,
-                child: const Icon(Icons.broken_image_outlined,
-                    size: 48, color: Colors.grey),
+                child: const Icon(
+                  Icons.broken_image_outlined,
+                  size: 48,
+                  color: Colors.grey,
+                ),
               ),
             ),
           ),
@@ -366,10 +388,7 @@ class _TareaDetalleViewState extends State<TareaDetalleView> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withOpacity(0.45),
-                  ],
+                  colors: [Colors.transparent, Colors.black.withOpacity(0.45)],
                   stops: const [0.5, 1.0],
                 ),
               ),
@@ -385,8 +404,11 @@ class _TareaDetalleViewState extends State<TareaDetalleView> {
                 color: Colors.black.withOpacity(0.4),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.fullscreen_rounded,
-                  color: Colors.white, size: 20),
+              child: const Icon(
+                Icons.fullscreen_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
             ),
           ),
         ],
@@ -426,7 +448,7 @@ class _TareaDetalleViewState extends State<TareaDetalleView> {
                           color: AppTheme.primary.withOpacity(0.35),
                           blurRadius: 6,
                           offset: const Offset(0, 2),
-                        )
+                        ),
                       ]
                     : [],
               ),
@@ -437,8 +459,11 @@ class _TareaDetalleViewState extends State<TareaDetalleView> {
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Container(
                     color: Colors.grey.shade200,
-                    child: const Icon(Icons.broken_image_outlined,
-                        size: 20, color: Colors.grey),
+                    child: const Icon(
+                      Icons.broken_image_outlined,
+                      size: 20,
+                      color: Colors.grey,
+                    ),
                   ),
                 ),
               ),
@@ -523,14 +548,19 @@ class _TareaDetalleViewState extends State<TareaDetalleView> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label,
-                  style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+              Text(
+                label,
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+              ),
               const SizedBox(height: 2),
-              Text(valor,
-                  style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF1A1A2E))),
+              Text(
+                valor,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF1A1A2E),
+                ),
+              ),
             ],
           ),
         ],
@@ -539,11 +569,11 @@ class _TareaDetalleViewState extends State<TareaDetalleView> {
   }
 
   Widget _buildDivider() => Divider(
-        height: 1,
-        indent: 64,
-        endIndent: 16,
-        color: Colors.grey.shade100,
-      );
+    height: 1,
+    indent: 64,
+    endIndent: 16,
+    color: Colors.grey.shade100,
+  );
 
   // ── Extrae nombre legible desde URL de Cloudinary ─────────────────────────
   // URL ejemplo: .../archivos_tareas/mi_tarea_final  (sin extensión en raw)
@@ -654,8 +684,11 @@ class _TareaDetalleViewState extends State<TareaDetalleView> {
                     color: AppTheme.danger.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.picture_as_pdf_rounded,
-                      color: AppTheme.danger, size: 22),
+                  child: const Icon(
+                    Icons.picture_as_pdf_rounded,
+                    color: AppTheme.danger,
+                    size: 22,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -665,22 +698,28 @@ class _TareaDetalleViewState extends State<TareaDetalleView> {
                       Text(
                         nombre,
                         style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF1A1A2E)),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF1A1A2E),
+                        ),
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 2),
                       Text(
                         'Toca para abrir',
                         style: TextStyle(
-                            fontSize: 11, color: Colors.grey.shade400),
+                          fontSize: 11,
+                          color: Colors.grey.shade400,
+                        ),
                       ),
                     ],
                   ),
                 ),
-                Icon(Icons.open_in_new_rounded,
-                    color: AppTheme.primary.withOpacity(0.6), size: 18),
+                Icon(
+                  Icons.open_in_new_rounded,
+                  color: AppTheme.primary.withOpacity(0.6),
+                  size: 18,
+                ),
               ],
             ),
           ),
@@ -692,8 +731,10 @@ class _TareaDetalleViewState extends State<TareaDetalleView> {
   // ── Chips ─────────────────────────────────────────────────────────────────
   Widget _buildChip(String texto, Color color, {IconData? icono}) {
     return Container(
-      padding:
-          EdgeInsets.symmetric(horizontal: icono != null ? 8 : 12, vertical: 6),
+      padding: EdgeInsets.symmetric(
+        horizontal: icono != null ? 8 : 12,
+        vertical: 6,
+      ),
       decoration: BoxDecoration(
         color: color.withOpacity(0.13),
         borderRadius: BorderRadius.circular(20),
@@ -708,7 +749,10 @@ class _TareaDetalleViewState extends State<TareaDetalleView> {
           Text(
             texto,
             style: TextStyle(
-                color: color, fontWeight: FontWeight.w600, fontSize: 12),
+              color: color,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
           ),
         ],
       ),
@@ -719,7 +763,10 @@ class _TareaDetalleViewState extends State<TareaDetalleView> {
     return Text(
       texto,
       style: const TextStyle(
-          fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.primary),
+        fontSize: 13,
+        fontWeight: FontWeight.bold,
+        color: AppTheme.primary,
+      ),
     );
   }
 }
@@ -797,8 +844,11 @@ class _ImagenFullscreenViewState extends State<_ImagenFullscreenView> {
                   color: Colors.black.withOpacity(0.5),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.close_rounded,
-                    color: Colors.white, size: 22),
+                child: const Icon(
+                  Icons.close_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
               ),
             ),
           ),
@@ -811,8 +861,10 @@ class _ImagenFullscreenViewState extends State<_ImagenFullscreenView> {
               right: 0,
               child: Center(
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.45),
                     borderRadius: BorderRadius.circular(20),
@@ -820,9 +872,10 @@ class _ImagenFullscreenViewState extends State<_ImagenFullscreenView> {
                   child: Text(
                     '${_indiceActual + 1} / ${widget.imagenes.length}',
                     style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600),
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
@@ -869,8 +922,11 @@ class _ImagenFullscreenViewState extends State<_ImagenFullscreenView> {
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => Container(
                               color: Colors.grey.shade800,
-                              child: const Icon(Icons.broken_image_outlined,
-                                  color: Colors.white38, size: 18),
+                              child: const Icon(
+                                Icons.broken_image_outlined,
+                                color: Colors.white38,
+                                size: 18,
+                              ),
                             ),
                           ),
                         ),
