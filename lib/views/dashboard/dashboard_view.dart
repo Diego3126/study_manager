@@ -7,6 +7,7 @@ import '../../services/tarea_service.dart';
 import '../../services/auth_service.dart';
 import '../../themes/app_theme.dart';
 import '../../widgets/tarea_card.dart';
+import '../../widgets/dashboard_calendario_widget.dart';
 
 class DashboardView extends StatefulWidget {
   const DashboardView({super.key});
@@ -18,6 +19,7 @@ class DashboardView extends StatefulWidget {
 class _DashboardViewState extends State<DashboardView> {
   bool _cargando = true;
   List<Tarea> _tareasHoy = [];
+  List<Tarea> _todasLasTareas = []; // ← NUEVO: para el calendario
   int _totalPendientes = 0;
   int _totalVencidas = 0;
   Usuario? _usuario;
@@ -43,6 +45,7 @@ class _DashboardViewState extends State<DashboardView> {
       setState(() {
         _usuario = usuario;
         _tareasHoy = hoy;
+        _todasLasTareas = todas; // ← NUEVO
         _totalPendientes = pendientes;
         _totalVencidas = vencidas;
         _cargando = false;
@@ -68,7 +71,7 @@ class _DashboardViewState extends State<DashboardView> {
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            // ── Header de perfil ──────────────────────────────────
+            // ── Header de perfil ─────────────────────────────────────────
             SliverToBoxAdapter(
               child: _DashboardHeader(
                 usuario: _usuario,
@@ -77,7 +80,7 @@ class _DashboardViewState extends State<DashboardView> {
               ),
             ),
 
-            // ── Contenido ─────────────────────────────────────────
+            // ── Contenido ────────────────────────────────────────────────
             SliverPadding(
               padding: const EdgeInsets.all(16),
               sliver: SliverList(
@@ -220,6 +223,13 @@ class _DashboardViewState extends State<DashboardView> {
                                 .toList(),
                           ),
                   ),
+
+                  // ── Calendario ───────────────────────────────────────────
+                  if (_cargando)
+                    _CalendarioSkeleton()
+                  else
+                    DashboardCalendario(tareas: _todasLasTareas),
+
                   const SizedBox(height: 80),
                 ]),
               ),
@@ -227,6 +237,36 @@ class _DashboardViewState extends State<DashboardView> {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Skeleton del calendario mientras carga
+// ─────────────────────────────────────────────────────────────────────────────
+class _CalendarioSkeleton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          height: 16,
+          width: 100,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade200,
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          height: 320,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -266,7 +306,6 @@ class _DashboardHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Avatar
           GestureDetector(
             onTap: onPerfilTap,
             child: Container(
@@ -294,10 +333,7 @@ class _DashboardHeader extends StatelessWidget {
               ),
             ),
           ),
-
           const SizedBox(width: 14),
-
-          // Nombre y rol
           Expanded(
             child: cargando
                 ? Column(
@@ -356,8 +392,6 @@ class _DashboardHeader extends StatelessWidget {
                     ],
                   ),
           ),
-
-          // Nombre de la app
           const Text(
             'StudyManager',
             style: TextStyle(
