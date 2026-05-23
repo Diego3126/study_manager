@@ -15,7 +15,7 @@ import '../views/universidades/universidades_view.dart';
 import '../views/universidades/universidad_form_view.dart';
 import '../views/perfil/perfil_info_view.dart';
 import '../views/perfil/cambiar_password_view.dart';
-import '../views/main_shell.dart';  // ← nuevo
+import '../views/main_shell.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/dashboard',

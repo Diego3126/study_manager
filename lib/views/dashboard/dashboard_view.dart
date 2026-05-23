@@ -146,7 +146,7 @@ class _DashboardViewState extends State<DashboardView> {
                                 height: 80,
                                 margin: const EdgeInsets.only(bottom: 8),
                                 decoration: BoxDecoration(
-                                  color: Colors.grey.shade200,
+                                  color: Theme.of(context).dividerColor,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
@@ -254,13 +254,14 @@ class _ResumenGeneralCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final total = totalPendientes + totalCompletadas;
     final progreso = total > 0 ? totalCompletadas / total : 0.0;
+    final primary = AppTheme.primaryOf(context);
 
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppTheme.primary.withOpacity(0.07),
+        color: primary.withOpacity(0.07),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.primary.withOpacity(0.18)),
+        border: Border.all(color: primary.withOpacity(0.18)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -268,7 +269,7 @@ class _ResumenGeneralCard extends StatelessWidget {
           // Título
           Row(
             children: [
-              Icon(Icons.bar_chart_rounded, color: AppTheme.primary, size: 20),
+              Icon(Icons.bar_chart_rounded, color: primary, size: 20),
               const SizedBox(width: 8),
               const Text(
                 'Resumen general',
@@ -285,7 +286,7 @@ class _ResumenGeneralCard extends StatelessWidget {
               _StatItem(
                 label: 'Total',
                 valor: '$total',
-                color: AppTheme.primary,
+                color: primary,
                 icono: Icons.assignment_outlined,
               ),
               _StatItem(
@@ -327,7 +328,7 @@ class _ResumenGeneralCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.primary,
+                      color: primary,
                     ),
                   ),
                 ],
@@ -338,8 +339,8 @@ class _ResumenGeneralCard extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: progreso,
                   minHeight: 8,
-                  backgroundColor: Colors.grey.shade200,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary),
+                  backgroundColor: Theme.of(context).dividerColor,
+                  valueColor: AlwaysStoppedAnimation<Color>(primary),
                 ),
               ),
             ],
@@ -355,8 +356,8 @@ class _ResumenGeneralCard extends StatelessWidget {
               icon: const Icon(Icons.list_alt_rounded, size: 18),
               label: const Text('Ver todas las tareas'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppTheme.primary,
-                side: BorderSide(color: AppTheme.primary),
+                foregroundColor: primary,
+                side: BorderSide(color: primary),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -409,14 +410,15 @@ class _StatItem extends StatelessWidget {
 class _CalendarioSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Column(
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           height: 16,
           width: 100,
           decoration: BoxDecoration(
-            color: Colors.grey.shade200,
+            color: Theme.of(context).dividerColor,
             borderRadius: BorderRadius.circular(8),
           ),
         ),
@@ -424,7 +426,7 @@ class _CalendarioSkeleton extends StatelessWidget {
         Container(
           height: 320,
           decoration: BoxDecoration(
-            color: Colors.grey.shade100,
+            color: isDark ? const Color(0xFF1A1D2E) : Colors.grey.shade100,
             borderRadius: BorderRadius.circular(16),
           ),
         ),
@@ -453,8 +455,8 @@ class _DashboardHeader extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      decoration: const BoxDecoration(
-        color: AppTheme.primary,
+      decoration: BoxDecoration(
+        color: AppTheme.primaryOf(context),
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(28),
           bottomRight: Radius.circular(28),

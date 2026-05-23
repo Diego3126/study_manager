@@ -1,23 +1,19 @@
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../models/tarea_model.dart';
 import '../themes/app_theme.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Paleta de colores por materia  (se asigna dinámicamente)
-// ─────────────────────────────────────────────────────────────────────────────
 const List<Color> _materiaPalette = [
-  Color(0xFF4C6EF5), // índigo
-  Color(0xFF0CA678), // esmeralda
-  Color(0xFFE67700), // naranja
-  Color(0xFFAE3EC9), // púrpura
-  Color(0xFFD63939), // rojo
-  Color(0xFF1098AD), // cian
-  Color(0xFF5C940D), // verde oliva
-  Color(0xFFE67E22), // ámbar
-  Color(0xFF862E9C), // violeta
-  Color(0xFF0B7285), // teal oscuro
+  Color(0xFF4C6EF5),
+  Color(0xFF0CA678),
+  Color(0xFFE67700),
+  Color(0xFFAE3EC9),
+  Color(0xFFD63939),
+  Color(0xFF1098AD),
+  Color(0xFF5C940D),
+  Color(0xFFE67E22),
+  Color(0xFF862E9C),
+  Color(0xFF0B7285),
 ];
 
 Color _colorParaMateria(String materia, Map<String, Color> cache) {
@@ -27,12 +23,8 @@ Color _colorParaMateria(String materia, Map<String, Color> cache) {
   });
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Widget principal
-// ─────────────────────────────────────────────────────────────────────────────
 class DashboardCalendario extends StatefulWidget {
   final List<Tarea> tareas;
-
   const DashboardCalendario({super.key, required this.tareas});
 
   @override
@@ -51,8 +43,6 @@ class _DashboardCalendarioState extends State<DashboardCalendario> {
     _hoy = DateTime.now();
     _mesActual = DateTime(_hoy.year, _hoy.month);
   }
-
-  // ── helpers ──────────────────────────────────────────────────────────────
 
   List<Tarea> _tareasDelDia(DateTime dia) {
     return widget.tareas.where((t) {
@@ -73,10 +63,8 @@ class _DashboardCalendarioState extends State<DashboardCalendario> {
       d.month == _diaSeleccionado!.month &&
       d.year == _diaSeleccionado!.year;
 
-  // primer día de la cuadrícula (lunes anterior al 1 del mes)
   DateTime get _primerDiaCuadricula {
     final primerDelMes = DateTime(_mesActual.year, _mesActual.month, 1);
-    // weekday: 1=lun … 7=dom
     final offset = (primerDelMes.weekday - 1) % 7;
     return primerDelMes.subtract(Duration(days: offset));
   }
@@ -89,8 +77,6 @@ class _DashboardCalendarioState extends State<DashboardCalendario> {
     return '${meses[_mesActual.month - 1]} ${_mesActual.year}';
   }
 
-  // ── navegación de mes ─────────────────────────────────────────────────────
-
   void _mesSiguiente() => setState(() {
         _mesActual = DateTime(_mesActual.year, _mesActual.month + 1);
         _diaSeleccionado = null;
@@ -101,8 +87,6 @@ class _DashboardCalendarioState extends State<DashboardCalendario> {
         _diaSeleccionado = null;
       });
 
-  // ── bottom sheet ──────────────────────────────────────────────────────────
-
   void _mostrarSheet(BuildContext context, Tarea tarea) {
     showModalBottomSheet(
       context: context,
@@ -112,93 +96,118 @@ class _DashboardCalendarioState extends State<DashboardCalendario> {
     );
   }
 
-  // ── build ─────────────────────────────────────────────────────────────────
+  void _mostrarListaTareas(
+      BuildContext context, DateTime dia, List<Tarea> tareas) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _ListaTareasSheet(
+        dia: dia,
+        tareas: tareas,
+        colorCache: _colorCache,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    // ← leemos el tema una vez
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF1A1D2E) : Colors.white;
+    final borderColor = isDark ? const Color(0xFF2A2D45) : Colors.transparent;
+    final primary = AppTheme.primaryOf(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Título de sección
-        const Text(
+        Text(
           'Calendario',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
+          ),
         ),
         const SizedBox(height: 12),
 
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: cardColor,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            border: Border.all(color: borderColor),
+            boxShadow: isDark
+                ? []
+                : [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
           ),
           child: Column(
             children: [
-              // ── Cabecera de mes ──────────────────────────────────────────
+              // ── Cabecera mes ──────────────────────────────────────────
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 14),
                 child: Row(
                   children: [
-                    _NavBtn(
-                        icon: Icons.chevron_left, onTap: _mesAnterior),
+                    _NavBtn(icon: Icons.chevron_left, onTap: _mesAnterior),
                     const Spacer(),
                     Text(
                       _nombreMes,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                       ),
                     ),
                     const Spacer(),
-                    _NavBtn(
-                        icon: Icons.chevron_right, onTap: _mesSiguiente),
+                    _NavBtn(icon: Icons.chevron_right, onTap: _mesSiguiente),
                   ],
                 ),
               ),
 
-              // ── Días de la semana ─────────────────────────────────────
+              // ── Días de la semana ────────────────────────────────────
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Row(
                   children: ['L', 'M', 'X', 'J', 'V', 'S', 'D']
-                      .map(
-                        (d) => Expanded(
-                          child: Center(
-                            child: Text(
-                              d,
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: d == 'D'
-                                    ? AppTheme.danger
-                                    : Colors.grey.shade500,
+                      .map((d) => Expanded(
+                            child: Center(
+                              child: Text(
+                                d,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: d == 'D'
+                                      ? AppTheme.danger
+                                      : Colors.grey.shade500,
+                                ),
                               ),
                             ),
-                          ),
-                        ),
-                      )
+                          ))
                       .toList(),
                 ),
               ),
               const SizedBox(height: 6),
 
-              // ── Cuadrícula ────────────────────────────────────────────
+              // ── Cuadrícula ───────────────────────────────────────────
               Padding(
                 padding:
                     const EdgeInsets.only(left: 8, right: 8, bottom: 12),
                 child: _buildCuadricula(context),
               ),
 
-              // ── Leyenda de materias ───────────────────────────────────
+              // ── Leyenda ──────────────────────────────────────────────
               if (_colorCache.isNotEmpty) ...[
-                const Divider(height: 1),
+                Divider(
+                    height: 1,
+                    color: isDark
+                        ? const Color(0xFF2A2D45)
+                        : Colors.grey.shade200),
                 _LeyendaMaterias(colorCache: _colorCache),
               ],
             ],
@@ -209,8 +218,9 @@ class _DashboardCalendarioState extends State<DashboardCalendario> {
   }
 
   Widget _buildCuadricula(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = AppTheme.primaryOf(context);
     final inicio = _primerDiaCuadricula;
-    // Siempre mostramos 6 semanas para que el calendario no salte de altura
     const totalDias = 42;
 
     return GridView.builder(
@@ -245,24 +255,22 @@ class _DashboardCalendarioState extends State<DashboardCalendario> {
             duration: const Duration(milliseconds: 150),
             decoration: BoxDecoration(
               color: esHoy
-                  ? AppTheme.primary.withOpacity(0.12)
+                  ? primary.withOpacity(0.15)
                   : esSel
-                      ? AppTheme.primary.withOpacity(0.08)
+                      ? primary.withOpacity(0.08)
                       : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
               border: esHoy
-                  ? Border.all(color: AppTheme.primary, width: 1.5)
+                  ? Border.all(color: primary, width: 1.5)
                   : esSel
                       ? Border.all(
-                          color: AppTheme.primary.withOpacity(0.4),
-                          width: 1)
+                          color: primary.withOpacity(0.4), width: 1)
                       : null,
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 const SizedBox(height: 4),
-                // Número del día
                 Text(
                   '${dia.day}',
                   style: TextStyle(
@@ -270,19 +278,23 @@ class _DashboardCalendarioState extends State<DashboardCalendario> {
                     fontWeight:
                         esHoy ? FontWeight.bold : FontWeight.normal,
                     color: esHoy
-                        ? AppTheme.primary
+                        ? primary
                         : esMes
-                            ? Colors.black87
-                            : Colors.grey.shade300,
+                            ? (isDark
+                                ? const Color(0xFFF0F0FF)
+                                : Colors.black87)
+                            : (isDark
+                                ? const Color(0xFF3A3D55)
+                                : Colors.grey.shade300),
                   ),
                 ),
                 const SizedBox(height: 2),
-                // Puntos / chips de tareas
                 ...tareas.take(3).map((t) {
                   final color =
                       _colorParaMateria(t.materia, _colorCache);
                   return Container(
-                    margin: const EdgeInsets.only(bottom: 2, left: 2, right: 2),
+                    margin: const EdgeInsets.only(
+                        bottom: 2, left: 2, right: 2),
                     height: 5,
                     decoration: BoxDecoration(
                       color: color,
@@ -295,7 +307,9 @@ class _DashboardCalendarioState extends State<DashboardCalendario> {
                     '+${tareas.length - 3}',
                     style: TextStyle(
                       fontSize: 8,
-                      color: Colors.grey.shade500,
+                      color: isDark
+                          ? Colors.grey.shade400
+                          : Colors.grey.shade500,
                     ),
                   ),
               ],
@@ -305,57 +319,43 @@ class _DashboardCalendarioState extends State<DashboardCalendario> {
       },
     );
   }
-
-  void _mostrarListaTareas(
-      BuildContext context, DateTime dia, List<Tarea> tareas) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _ListaTareasSheet(
-        dia: dia,
-        tareas: tareas,
-        colorCache: _colorCache,
-      ),
-    );
-  }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Botón de navegación del mes
-// ─────────────────────────────────────────────────────────────────────────────
+// ── Botón navegación mes ──────────────────────────────────────────────────────
 class _NavBtn extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
-
   const _NavBtn({required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-          color: Colors.grey.shade100,
+          color: isDark ? const Color(0xFF242840) : Colors.grey.shade100,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(icon, size: 18, color: Colors.black87),
+        child: Icon(
+          icon,
+          size: 18,
+          color: isDark ? const Color(0xFFF0F0FF) : Colors.black87,
+        ),
       ),
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Leyenda de materias
-// ─────────────────────────────────────────────────────────────────────────────
+// ── Leyenda de materias ───────────────────────────────────────────────────────
 class _LeyendaMaterias extends StatelessWidget {
   final Map<String, Color> colorCache;
-
   const _LeyendaMaterias({required this.colorCache});
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Wrap(
@@ -376,8 +376,12 @@ class _LeyendaMaterias extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 e.key,
-                style:
-                    const TextStyle(fontSize: 11, color: Colors.black87),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: isDark
+                      ? const Color(0xFFB0B0CC)
+                      : Colors.black87,
+                ),
               ),
             ],
           );
@@ -387,9 +391,7 @@ class _LeyendaMaterias extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Sheet: lista de tareas de un día (cuando hay más de 1)
-// ─────────────────────────────────────────────────────────────────────────────
+// ── Sheet lista de tareas ─────────────────────────────────────────────────────
 class _ListaTareasSheet extends StatelessWidget {
   final DateTime dia;
   final List<Tarea> tareas;
@@ -403,6 +405,10 @@ class _ListaTareasSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final sheetColor = isDark ? const Color(0xFF1A1D2E) : Colors.white;
+    final textColor = isDark ? const Color(0xFFF0F0FF) : Colors.black87;
+
     const meses = [
       'ene', 'feb', 'mar', 'abr', 'may', 'jun',
       'jul', 'ago', 'sep', 'oct', 'nov', 'dic',
@@ -415,36 +421,39 @@ class _ListaTareasSheet extends StatelessWidget {
       minChildSize: 0.3,
       maxChildSize: 0.8,
       builder: (_, controller) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        decoration: BoxDecoration(
+          color: sheetColor,
+          borderRadius:
+              const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
           children: [
             const _SheetHandle(),
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 20, vertical: 12),
               child: Row(
                 children: [
-                  const Icon(Icons.calendar_today,
-                      size: 18, color: Colors.grey),
+                  Icon(Icons.calendar_today,
+                      size: 18, color: Colors.grey.shade500),
                   const SizedBox(width: 8),
-                  Text(
-                    titulo,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 15),
-                  ),
+                  Text(titulo,
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: textColor)),
                   const Spacer(),
-                  Text(
-                    '${tareas.length} tareas',
-                    style: const TextStyle(
-                        fontSize: 12, color: Colors.grey),
-                  ),
+                  Text('${tareas.length} tareas',
+                      style: const TextStyle(
+                          fontSize: 12, color: Colors.grey)),
                 ],
               ),
             ),
-            const Divider(height: 1),
+            Divider(
+                height: 1,
+                color: isDark
+                    ? const Color(0xFF2A2D45)
+                    : Colors.grey.shade200),
             Expanded(
               child: ListView.separated(
                 controller: controller,
@@ -473,8 +482,8 @@ class _ListaTareasSheet extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: color.withOpacity(0.08),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                            color: color.withOpacity(0.3)),
+                        border:
+                            Border.all(color: color.withOpacity(0.3)),
                       ),
                       child: Row(
                         children: [
@@ -493,18 +502,18 @@ class _ListaTareasSheet extends StatelessWidget {
                                   CrossAxisAlignment.start,
                               children: [
                                 Text(t.titulo,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                         fontWeight: FontWeight.w600,
-                                        fontSize: 13)),
+                                        fontSize: 13,
+                                        color: textColor)),
                                 Text(t.materia,
                                     style: TextStyle(
-                                        fontSize: 11,
-                                        color: color)),
+                                        fontSize: 11, color: color)),
                               ],
                             ),
                           ),
-                          const Icon(Icons.chevron_right,
-                              color: Colors.grey, size: 18),
+                          Icon(Icons.chevron_right,
+                              color: Colors.grey.shade500, size: 18),
                         ],
                       ),
                     ),
@@ -519,13 +528,10 @@ class _ListaTareasSheet extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Sheet: detalle de una tarea
-// ─────────────────────────────────────────────────────────────────────────────
+// ── Sheet detalle tarea ───────────────────────────────────────────────────────
 class _TareaSheet extends StatelessWidget {
   final Tarea tarea;
   final Map<String, Color> colorCache;
-
   const _TareaSheet({required this.tarea, required this.colorCache});
 
   String get _estadoTexto {
@@ -559,13 +565,17 @@ class _TareaSheet extends StatelessWidget {
   String _formatearHora() {
     if (tarea.horaEntrega == null) return 'Sin hora definida';
     final h = tarea.horaEntrega!;
-    final hStr = h.hour.toString().padLeft(2, '0');
-    final mStr = h.minute.toString().padLeft(2, '0');
-    return '$hStr:$mStr';
+    return '${h.hour.toString().padLeft(2, '0')}:${h.minute.toString().padLeft(2, '0')}';
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final sheetColor = isDark ? const Color(0xFF1A1D2E) : Colors.white;
+    final textColor = isDark ? const Color(0xFFF0F0FF) : const Color(0xFF1A1A2E);
+    final subColor = isDark ? const Color(0xFFB0B0CC) : const Color(0xFF444466);
+    final chipBg = isDark ? const Color(0xFF242840) : Colors.grey.shade50;
+    final chipBorder = isDark ? const Color(0xFF2A2D45) : Colors.grey.shade200;
     final color = _colorParaMateria(tarea.materia, colorCache);
 
     return DraggableScrollableSheet(
@@ -573,9 +583,10 @@ class _TareaSheet extends StatelessWidget {
       minChildSize: 0.4,
       maxChildSize: 0.9,
       builder: (_, controller) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        decoration: BoxDecoration(
+          color: sheetColor,
+          borderRadius:
+              const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: SingleChildScrollView(
           controller: controller,
@@ -584,41 +595,33 @@ class _TareaSheet extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Handle
                 const _SheetHandle(),
                 const SizedBox(height: 4),
 
-                // Chip de materia
+                // Chip materia
                 Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: color.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(20),
-                    border:
-                        Border.all(color: color.withOpacity(0.4)),
+                    border: Border.all(color: color.withOpacity(0.4)),
                   ),
-                  child: Text(
-                    tarea.materia,
-                    style: TextStyle(
-                        fontSize: 12,
-                        color: color,
-                        fontWeight: FontWeight.w600),
-                  ),
+                  child: Text(tarea.materia,
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: color,
+                          fontWeight: FontWeight.w600)),
                 ),
                 const SizedBox(height: 10),
 
-                // Título
-                Text(
-                  tarea.titulo,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                Text(tarea.titulo,
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: textColor)),
                 const SizedBox(height: 16),
 
-                // Estado
                 _InfoRow(
                   icono: _estadoIcono,
                   color: _estadoColor,
@@ -626,54 +629,47 @@ class _TareaSheet extends StatelessWidget {
                   valor: _estadoTexto,
                   valorColor: _estadoColor,
                   bold: true,
+                  isDark: isDark,
                 ),
                 const SizedBox(height: 10),
-
-                // Fecha de entrega
                 _InfoRow(
                   icono: Icons.event,
                   color: color,
                   label: 'Fecha de entrega',
                   valor: _formatearFecha(tarea.fechaEntrega),
+                  isDark: isDark,
                 ),
                 const SizedBox(height: 10),
-
-                // Hora de entrega
                 _InfoRow(
                   icono: Icons.access_time,
                   color: color,
                   label: 'Hora de entrega',
                   valor: _formatearHora(),
+                  isDark: isDark,
                 ),
 
-                // Descripción
                 if (tarea.descripcion.isNotEmpty) ...[
                   const SizedBox(height: 16),
-                  const Text(
-                    'Descripción',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w600, fontSize: 13),
-                  ),
+                  Text('Descripción',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                          color: textColor)),
                   const SizedBox(height: 6),
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
+                      color: chipBg,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade200),
+                      border: Border.all(color: chipBorder),
                     ),
-                    child: Text(
-                      tarea.descripcion,
-                      style: const TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF444466),
-                          height: 1.5),
-                    ),
+                    child: Text(tarea.descripcion,
+                        style: TextStyle(
+                            fontSize: 13, color: subColor, height: 1.5)),
                   ),
                 ],
 
-                // Tipo y prioridad
                 const SizedBox(height: 16),
                 Row(
                   children: [
@@ -682,6 +678,7 @@ class _TareaSheet extends StatelessWidget {
                         label: 'Tipo',
                         valor: tarea.tipo,
                         icono: Icons.category_outlined,
+                        isDark: isDark,
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -690,14 +687,13 @@ class _TareaSheet extends StatelessWidget {
                         label: 'Prioridad',
                         valor: tarea.prioridad,
                         icono: Icons.flag_outlined,
+                        isDark: isDark,
                       ),
                     ),
                   ],
                 ),
 
                 const SizedBox(height: 24),
-
-                // Botón ver detalle completo
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
@@ -708,13 +704,12 @@ class _TareaSheet extends StatelessWidget {
                     icon: const Icon(Icons.open_in_new, size: 18),
                     label: const Text('Ver detalle completo'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primary,
+                      backgroundColor: AppTheme.primaryOf(context),
                       foregroundColor: Colors.white,
                       padding:
                           const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                          borderRadius: BorderRadius.circular(12)),
                       textStyle: const TextStyle(
                           fontWeight: FontWeight.w600, fontSize: 14),
                     ),
@@ -729,10 +724,7 @@ class _TareaSheet extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers de UI reutilizables
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ── Widgets helper ────────────────────────────────────────────────────────────
 class _SheetHandle extends StatelessWidget {
   const _SheetHandle();
 
@@ -759,6 +751,7 @@ class _InfoRow extends StatelessWidget {
   final String valor;
   final Color? valorColor;
   final bool bold;
+  final bool isDark;
 
   const _InfoRow({
     required this.icono,
@@ -767,6 +760,7 @@ class _InfoRow extends StatelessWidget {
     required this.valor,
     this.valorColor,
     this.bold = false,
+    this.isDark = false,
   });
 
   @override
@@ -775,19 +769,18 @@ class _InfoRow extends StatelessWidget {
       children: [
         Icon(icono, size: 18, color: color),
         const SizedBox(width: 10),
-        Text(
-          '$label: ',
-          style:
-              const TextStyle(fontSize: 13, color: Colors.grey),
-        ),
+        Text('$label: ',
+            style: TextStyle(
+                fontSize: 13,
+                color: isDark ? Colors.grey.shade500 : Colors.grey)),
         Expanded(
           child: Text(
             valor,
             style: TextStyle(
               fontSize: 13,
-              fontWeight:
-                  bold ? FontWeight.bold : FontWeight.w500,
-              color: valorColor ?? Colors.black87,
+              fontWeight: bold ? FontWeight.bold : FontWeight.w500,
+              color: valorColor ??
+                  (isDark ? const Color(0xFFF0F0FF) : Colors.black87),
             ),
           ),
         ),
@@ -800,25 +793,35 @@ class _ChipInfo extends StatelessWidget {
   final String label;
   final String valor;
   final IconData icono;
+  final bool isDark;
 
   const _ChipInfo({
     required this.label,
     required this.valor,
     required this.icono,
+    this.isDark = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final bg = isDark ? const Color(0xFF242840) : Colors.grey.shade50;
+    final border =
+        isDark ? const Color(0xFF2A2D45) : Colors.grey.shade200;
+    final textColor =
+        isDark ? const Color(0xFFF0F0FF) : Colors.black87;
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: bg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: border),
       ),
       child: Row(
         children: [
-          Icon(icono, size: 16, color: Colors.grey.shade500),
+          Icon(icono,
+              size: 16,
+              color: isDark ? Colors.grey.shade400 : Colors.grey.shade500),
           const SizedBox(width: 8),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -827,8 +830,10 @@ class _ChipInfo extends StatelessWidget {
                   style: const TextStyle(
                       fontSize: 10, color: Colors.grey)),
               Text(valor,
-                  style: const TextStyle(
-                      fontSize: 12, fontWeight: FontWeight.w600)),
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: textColor)),
             ],
           ),
         ],

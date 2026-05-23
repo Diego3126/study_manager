@@ -11,7 +11,7 @@ class CambiarPasswordView extends StatefulWidget {
 }
 
 class _CambiarPasswordViewState extends State<CambiarPasswordView> {
-  final _formKey   = GlobalKey<FormState>();
+  final _formKey    = GlobalKey<FormState>();
   final _passActual = TextEditingController();
 
   bool _verActual = false;
@@ -26,6 +26,12 @@ class _CambiarPasswordViewState extends State<CambiarPasswordView> {
   Future<void> _confirmar() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // ✅ Capturar tema antes del builder
+    final primary      = AppTheme.primaryOf(context);
+    final onSurface    = Theme.of(context).colorScheme.onSurface;
+    final surfaceColor = Theme.of(context).colorScheme.surface;
+    final dividerColor = Theme.of(context).dividerColor;
+
     final confirmo = await showModalBottomSheet<bool>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -33,9 +39,9 @@ class _CambiarPasswordViewState extends State<CambiarPasswordView> {
       isScrollControlled: true,
       builder: (_) => Container(
         padding: const EdgeInsets.fromLTRB(24, 12, 24, 40),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        decoration: BoxDecoration(
+          color: surfaceColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -44,26 +50,26 @@ class _CambiarPasswordViewState extends State<CambiarPasswordView> {
               width: 40, height: 4,
               margin: const EdgeInsets.only(bottom: 28),
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: dividerColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             Container(
               width: 64, height: 64,
               decoration: BoxDecoration(
-                color: AppTheme.primary,
+                color: primary,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: const Icon(Icons.bolt_rounded,
                   color: Colors.white, size: 36),
             ),
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'Cambiar Contraseña',
               style: TextStyle(
                 fontSize:   20,
                 fontWeight: FontWeight.bold,
-                color:      Color(0xFF1A1A2E),
+                color:      onSurface,
               ),
             ),
             const SizedBox(height: 12),
@@ -74,7 +80,7 @@ class _CambiarPasswordViewState extends State<CambiarPasswordView> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
-                color:    Colors.grey.shade500,
+                color:    onSurface.withOpacity(0.55),
                 height:   1.5,
               ),
             ),
@@ -84,7 +90,7 @@ class _CambiarPasswordViewState extends State<CambiarPasswordView> {
               child: ElevatedButton(
                 onPressed: () => Navigator.pop(context, true),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
+                  backgroundColor: primary,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
@@ -103,8 +109,8 @@ class _CambiarPasswordViewState extends State<CambiarPasswordView> {
               child: OutlinedButton(
                 onPressed: () => Navigator.pop(context, false),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF1A1A2E),
-                  side: BorderSide(color: Colors.grey.shade300),
+                  foregroundColor: onSurface,
+                  side: BorderSide(color: dividerColor),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30)),
                 ),
@@ -126,12 +132,10 @@ class _CambiarPasswordViewState extends State<CambiarPasswordView> {
   Future<void> _guardar() async {
     setState(() => _guardando = true);
     try {
-      // Verificar identidad reautenticando con la contraseña actual
       await AuthService().verificarPassword(_passActual.text);
 
       if (!mounted) return;
 
-      // Enviar correo de restablecimiento
       final email = AuthService().currentUser?.email ?? '';
       await AuthService().enviarResetPassword(email);
 
@@ -152,6 +156,12 @@ class _CambiarPasswordViewState extends State<CambiarPasswordView> {
   }
 
   Future<void> _mostrarSheetExito(String email) async {
+    // ✅ Capturar tema antes del builder
+    final primary      = AppTheme.primaryOf(context);
+    final onSurface    = Theme.of(context).colorScheme.onSurface;
+    final surfaceColor = Theme.of(context).colorScheme.surface;
+    final dividerColor = Theme.of(context).dividerColor;
+
     await showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -160,9 +170,9 @@ class _CambiarPasswordViewState extends State<CambiarPasswordView> {
       isScrollControlled: true,
       builder: (_) => Container(
         padding: const EdgeInsets.fromLTRB(24, 12, 24, 40),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        decoration: BoxDecoration(
+          color: surfaceColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -171,26 +181,26 @@ class _CambiarPasswordViewState extends State<CambiarPasswordView> {
               width: 40, height: 4,
               margin: const EdgeInsets.only(bottom: 28),
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: dividerColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             Container(
               width: 64, height: 64,
               decoration: BoxDecoration(
-                color: Colors.green,
+                color: Colors.green, // semántico, se mantiene
                 borderRadius: BorderRadius.circular(16),
               ),
               child: const Icon(Icons.mark_email_read_outlined,
                   color: Colors.white, size: 36),
             ),
             const SizedBox(height: 24),
-            const Text(
+            Text(
               '¡Correo enviado!',
               style: TextStyle(
                 fontSize:   20,
                 fontWeight: FontWeight.bold,
-                color:      Color(0xFF1A1A2E),
+                color:      onSurface,
               ),
             ),
             const SizedBox(height: 12),
@@ -201,7 +211,7 @@ class _CambiarPasswordViewState extends State<CambiarPasswordView> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
-                color:    Colors.grey.shade500,
+                color:    onSurface.withOpacity(0.55),
                 height:   1.5,
               ),
             ),
@@ -214,7 +224,7 @@ class _CambiarPasswordViewState extends State<CambiarPasswordView> {
                   context.pop();
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
+                  backgroundColor: primary,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
@@ -242,14 +252,13 @@ class _CambiarPasswordViewState extends State<CambiarPasswordView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FA),
       body: Column(
         children: [
           // ── Header ───────────────────────────────────────────────
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
-              color: AppTheme.primary,
+              color: AppTheme.primaryOf(context),
               borderRadius: const BorderRadius.only(
                 bottomLeft:  Radius.circular(32),
                 bottomRight: Radius.circular(32),
@@ -291,12 +300,12 @@ class _CambiarPasswordViewState extends State<CambiarPasswordView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Verificar identidad',
                       style: TextStyle(
                         fontSize:   16,
                         fontWeight: FontWeight.bold,
-                        color:      Color(0xFF1A1A2E),
+                        color:      Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -306,8 +315,9 @@ class _CambiarPasswordViewState extends State<CambiarPasswordView> {
                       'establecer la nueva contraseña.',
                       style: TextStyle(
                         fontSize: 13,
-                        color:    Colors.grey.shade500,
-                        height:   1.5,
+                        color: Theme.of(context).colorScheme.onSurface
+                            .withOpacity(0.55),
+                        height: 1.5,
                       ),
                     ),
                     const SizedBox(height: 28),
@@ -340,7 +350,7 @@ class _CambiarPasswordViewState extends State<CambiarPasswordView> {
               child: ElevatedButton(
                 onPressed: _guardando ? null : _confirmar,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
+                  backgroundColor: AppTheme.primaryOf(context),
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
@@ -377,10 +387,10 @@ class _CampoLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize:   13,
         fontWeight: FontWeight.w500,
-        color:      Color(0xFF1A1A2E),
+        color:      Theme.of(context).colorScheme.onSurface,
       ),
     );
   }
@@ -403,6 +413,9 @@ class _CampoPassword extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primary = AppTheme.primaryOf(context);
+    final isDark  = Theme.of(context).brightness == Brightness.dark;
+
     return TextFormField(
       controller:  controller,
       obscureText: !ver,
@@ -410,19 +423,22 @@ class _CampoPassword extends StatelessWidget {
       style: const TextStyle(fontSize: 14),
       decoration: InputDecoration(
         hintText:  hint,
-        hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+        hintStyle: TextStyle(
+          color:    Theme.of(context).colorScheme.onSurface.withOpacity(0.35),
+          fontSize: 14,
+        ),
         filled:    true,
-        fillColor: Colors.white,
+        fillColor: isDark ? const Color(0xFF242840) : Colors.white,
         prefixIcon: Padding(
           padding: const EdgeInsets.all(10),
           child: Container(
             width: 36, height: 36,
             decoration: BoxDecoration(
-              color:        AppTheme.primary.withOpacity(0.10),
+              color:        primary.withOpacity(0.10),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(Icons.lock_outline_rounded,
-                size: 18, color: AppTheme.primary),
+                size: 18, color: primary),
           ),
         ),
         suffixIcon: IconButton(
@@ -431,7 +447,7 @@ class _CampoPassword extends StatelessWidget {
                 ? Icons.visibility_off_outlined
                 : Icons.visibility_outlined,
             size:  20,
-            color: Colors.grey.shade400,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
           ),
           onPressed: onToggle,
         ),
@@ -446,7 +462,7 @@ class _CampoPassword extends StatelessWidget {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-              color: AppTheme.primary.withOpacity(0.5), width: 1.5),
+              color: primary.withOpacity(0.5), width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
