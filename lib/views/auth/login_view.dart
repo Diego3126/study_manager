@@ -138,7 +138,7 @@ class _LoginViewState extends State<LoginView> {
                                 ),
                                 const SizedBox(height: 14),
                                 const Text(
-                                  'StudyManager',
+                                  ' Bienvenido a\nStudyManager',
                                   style: TextStyle(
                                     fontSize: 26,
                                     fontWeight: FontWeight.bold,

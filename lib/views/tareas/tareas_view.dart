@@ -107,12 +107,15 @@ class _TareasViewState extends State<TareasView>
             Icon(
               Icons.assignment_outlined,
               size: 64,
-              color: Colors.grey.shade300,
+              color: Theme.of(context).dividerColor,
             ),
             const SizedBox(height: 12),
             Text(
               'No hay tareas aquí',
-              style: TextStyle(color: Colors.grey.shade400, fontSize: 15),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                fontSize: 15,
+              ),
             ),
           ],
         ),
@@ -143,27 +146,28 @@ class _TareasViewState extends State<TareasView>
 
   @override
   Widget build(BuildContext context) {
-    final mot = _motivacion;
+    final mot     = _motivacion;
+    final primary = AppTheme.primaryOf(context);
+    final isDark  = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FA),
       body: NestedScrollView(
         headerSliverBuilder: (context, _) => [
           // ── Header ──────────────────────────────────────────────────────
           SliverToBoxAdapter(
             child: Container(
-              decoration: const BoxDecoration(
-                color: AppTheme.primary,
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(28),
+              decoration: BoxDecoration(
+                color: primary,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft:  Radius.circular(28),
                   bottomRight: Radius.circular(28),
                 ),
               ),
               padding: EdgeInsets.only(
-                top: MediaQuery.of(context).padding.top + 16,
+                top:    MediaQuery.of(context).padding.top + 16,
                 bottom: 20,
-                left: 20,
-                right: 20,
+                left:   20,
+                right:  20,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -172,8 +176,8 @@ class _TareasViewState extends State<TareasView>
                   const Text(
                     'Mis Tareas',
                     style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
+                      color:      Colors.white,
+                      fontSize:   24,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -181,7 +185,7 @@ class _TareasViewState extends State<TareasView>
                   Text(
                     'Organiza tu progreso académico',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.75),
+                      color:    Colors.white.withOpacity(0.75),
                       fontSize: 13,
                     ),
                   ),
@@ -204,13 +208,12 @@ class _TareasViewState extends State<TareasView>
                         const Text(
                           'Resumen de tareas',
                           style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
+                            color:      Colors.white,
+                            fontSize:   13,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                         const SizedBox(height: 12),
-                        // Contadores
                         Skeletonizer(
                           enabled: _cargando,
                           child: Row(
@@ -247,18 +250,25 @@ class _TareasViewState extends State<TareasView>
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
-                        vertical: 14,
+                        vertical:   14,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: isDark
+                            ? const Color(0xFF1A1D2E)
+                            : Colors.white,
                         borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+                        border: isDark
+                            ? Border.all(color: const Color(0xFF2A2D45))
+                            : null,
+                        boxShadow: isDark
+                            ? null
+                            : [
+                                BoxShadow(
+                                  color:     Colors.black.withOpacity(0.08),
+                                  blurRadius: 8,
+                                  offset:    const Offset(0, 2),
+                                ),
+                              ],
                       ),
                       child: Row(
                         children: [
@@ -273,10 +283,12 @@ class _TareasViewState extends State<TareasView>
                               children: [
                                 Text(
                                   mot['titulo']!,
-                                  style: const TextStyle(
-                                    fontSize: 15,
+                                  style: TextStyle(
+                                    fontSize:   15,
                                     fontWeight: FontWeight.bold,
-                                    color: Color(0xFF1A1A2E),
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface,
                                   ),
                                 ),
                                 const SizedBox(height: 3),
@@ -284,17 +296,19 @@ class _TareasViewState extends State<TareasView>
                                   mot['subtitulo']!,
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: Colors.grey.shade600,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.55),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          // Barra de progreso circular
                           if (_todas.isNotEmpty)
                             _ProgressRing(
                               completadas: _completadas.length,
-                              total: _todas.length,
+                              total:       _todas.length,
                             ),
                         ],
                       ),
@@ -310,12 +324,15 @@ class _TareasViewState extends State<TareasView>
           SliverPersistentHeader(
             pinned: true,
             delegate: _TabBarDelegate(
-              TabBar(
-                controller: _tabController,
-                labelColor: AppTheme.primary,
-                unselectedLabelColor: Colors.grey,
-                indicatorColor: AppTheme.primary,
-                indicatorWeight: 3,
+              tabBar: TabBar(
+                controller:            _tabController,
+                labelColor:            primary,
+                unselectedLabelColor:  Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withOpacity(0.5),
+                indicatorColor:        primary,
+                indicatorWeight:       3,
                 labelStyle: const TextStyle(fontWeight: FontWeight.w600),
                 tabs: [
                   Tab(text: 'Todas (${_todas.length})'),
@@ -323,6 +340,7 @@ class _TareasViewState extends State<TareasView>
                   Tab(text: 'Hechas (${_completadas.length})'),
                 ],
               ),
+              isDark: isDark,
             ),
           ),
         ],
@@ -331,9 +349,16 @@ class _TareasViewState extends State<TareasView>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.error_outline, color: AppTheme.danger, size: 48),
+                    Icon(Icons.error_outline,
+                        color: AppTheme.danger, size: 48),
                     const SizedBox(height: 12),
-                    Text(_error!, style: const TextStyle(color: Colors.grey)),
+                    Text(_error!,
+                        style: TextStyle(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.6),
+                        )),
                     const SizedBox(height: 12),
                     ElevatedButton(
                       onPressed: _cargar,
@@ -351,10 +376,10 @@ class _TareasViewState extends State<TareasView>
                           height: 80,
                           margin: const EdgeInsets.symmetric(
                             horizontal: 12,
-                            vertical: 5,
+                            vertical:   5,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.grey.shade200,
+                            color: Theme.of(context).dividerColor,
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
@@ -369,7 +394,7 @@ class _TareasViewState extends State<TareasView>
                       ),
               ),
       ),
-      floatingActionButton: null,
+      floatingActionButton:         null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: SafeArea(
         child: Padding(
@@ -379,10 +404,10 @@ class _TareasViewState extends State<TareasView>
               await context.push('/tareas/nueva');
               _cargar();
             },
-            icon: const Icon(Icons.add),
+            icon:  const Icon(Icons.add),
             label: const Text('Nueva tarea'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primary,
+              backgroundColor: primary,
               foregroundColor: Colors.white,
               minimumSize: const Size(double.infinity, 52),
               shape: RoundedRectangleBorder(
@@ -400,8 +425,8 @@ class _TareasViewState extends State<TareasView>
 // ── Chip contador ─────────────────────────────────────────────────────────────
 class _ContadorChip extends StatelessWidget {
   final String label;
-  final int valor;
-  final Color color;
+  final int    valor;
+  final Color  color;
 
   const _ContadorChip({
     required this.label,
@@ -415,7 +440,7 @@ class _ContadorChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.15),
+          color:        Colors.white.withOpacity(0.15),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Column(
@@ -423,9 +448,9 @@ class _ContadorChip extends StatelessWidget {
             Text(
               '$valor',
               style: TextStyle(
-                fontSize: 20,
+                fontSize:   20,
                 fontWeight: FontWeight.bold,
-                color: color,
+                color:      color,
               ),
             ),
             const SizedBox(height: 2),
@@ -433,7 +458,7 @@ class _ContadorChip extends StatelessWidget {
               label,
               style: TextStyle(
                 fontSize: 11,
-                color: Colors.white.withOpacity(0.85),
+                color:    Colors.white.withOpacity(0.85),
               ),
             ),
           ],
@@ -455,23 +480,23 @@ class _ProgressRing extends StatelessWidget {
     final porcentaje = total == 0 ? 0.0 : completadas / total;
 
     return SizedBox(
-      width: 44,
+      width:  44,
       height: 44,
       child: Stack(
         alignment: Alignment.center,
         children: [
           CircularProgressIndicator(
-            value: porcentaje,
-            strokeWidth: 4,
-            backgroundColor: Colors.grey.shade200,
-            valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.accent),
+            value:           porcentaje,
+            strokeWidth:     4,
+            backgroundColor: Theme.of(context).dividerColor,
+            valueColor:      const AlwaysStoppedAnimation<Color>(AppTheme.accent),
           ),
           Text(
             '${(porcentaje * 100).toInt()}%',
-            style: const TextStyle(
-              fontSize: 10,
+            style: TextStyle(
+              fontSize:   10,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1A1A2E),
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ],
@@ -483,7 +508,9 @@ class _ProgressRing extends StatelessWidget {
 // ── Delegate para TabBar sticky ───────────────────────────────────────────────
 class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   final TabBar tabBar;
-  const _TabBarDelegate(this.tabBar);
+  final bool   isDark;
+
+  const _TabBarDelegate({required this.tabBar, required this.isDark});
 
   @override
   Widget build(
@@ -491,7 +518,10 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    return Container(color: const Color(0xFFF4F6FA), child: tabBar);
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: tabBar,
+    );
   }
 
   @override
@@ -501,5 +531,6 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   double get minExtent => tabBar.preferredSize.height;
 
   @override
-  bool shouldRebuild(covariant _TabBarDelegate oldDelegate) => false;
+  bool shouldRebuild(covariant _TabBarDelegate oldDelegate) =>
+      oldDelegate.isDark != isDark;
 }

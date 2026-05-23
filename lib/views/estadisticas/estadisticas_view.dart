@@ -36,7 +36,6 @@ class _EstadisticasViewState extends State<EstadisticasView> {
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
 
-      // Cargar tareas y sesiones en paralelo
       final resultados = await Future.wait([
         TareaService().getAll(),
         if (uid != null)
@@ -53,7 +52,6 @@ class _EstadisticasViewState extends State<EstadisticasView> {
       final tareas = resultados[0] as List<Tarea>;
       final sesiones = resultados[1] as List<Map<String, dynamic>>;
 
-      // Pasamos ambos al isolate como lista
       final stats = await compute(calcularEstadisticas, [tareas, sesiones]);
 
       if (!mounted) return;
@@ -84,7 +82,7 @@ class _EstadisticasViewState extends State<EstadisticasView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FA),
+      // ✅ Sin backgroundColor hardcodeado — usa scaffoldBackgroundColor del tema
       body: _error != null
           ? _buildError()
           : Skeletonizer(
@@ -112,13 +110,15 @@ class _EstadisticasViewState extends State<EstadisticasView> {
   }
 
   Widget _buildSkeleton() {
+    // ✅ onSurface con opacidad en lugar de Colors.grey.shade200 fijo
+    final skeletonColor = Theme.of(context).colorScheme.onSurface.withOpacity(0.08);
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         Container(
           height: 180,
           decoration: BoxDecoration(
-            color: Colors.grey.shade200,
+            color: skeletonColor,
             borderRadius: BorderRadius.circular(24),
           ),
         ),
@@ -129,7 +129,7 @@ class _EstadisticasViewState extends State<EstadisticasView> {
             height: 160,
             margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
-              color: Colors.grey.shade200,
+              color: skeletonColor,
               borderRadius: BorderRadius.circular(16),
             ),
           ),
@@ -148,12 +148,8 @@ class _EstadisticasViewState extends State<EstadisticasView> {
           sliver: SliverList(
             delegate: SliverChildListDelegate([
               const SizedBox(height: 20),
-
-              // ── Toggle Tareas / Enfoque ───────────────────────────────
               _buildToggle(),
               const SizedBox(height: 20),
-
-              // ── Contenido según selección ────────────────────────────
               if (!_verEnfoque) ...[
                 _buildResumenRapido(s),
                 const SizedBox(height: 20),
@@ -186,10 +182,12 @@ class _EstadisticasViewState extends State<EstadisticasView> {
 
   // ── Header ────────────────────────────────────────────────────────────────
   Widget _buildHeader(EstadisticasTareas s) {
+    // ✅ primaryOf(context) en lugar de AppTheme.primary fijo
+    final primaryColor = AppTheme.primaryOf(context);
     return Container(
-      decoration: const BoxDecoration(
-        color: AppTheme.primary,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: primaryColor,
+        borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(28),
           bottomRight: Radius.circular(28),
         ),
@@ -220,8 +218,6 @@ class _EstadisticasViewState extends State<EstadisticasView> {
             ),
           ),
           const SizedBox(height: 20),
-
-          // Fila de highlights
           Row(
             children: [
               _buildHighlight(
@@ -261,6 +257,8 @@ class _EstadisticasViewState extends State<EstadisticasView> {
     required String label,
     required Color color,
   }) {
+    // El header siempre tiene fondo primario (oscuro o claro),
+    // así que estos overlays blancos semi-transparentes son correctos en ambos modos
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
@@ -336,6 +334,7 @@ class _EstadisticasViewState extends State<EstadisticasView> {
 
   // ── Progreso general ──────────────────────────────────────────────────────
   Widget _buildProgresoGeneral(EstadisticasTareas s) {
+    final colorScheme = Theme.of(context).colorScheme;
     final pct = s.porcentajeCompletado;
     return _SeccionCard(
       titulo: 'Progreso general',
@@ -347,7 +346,7 @@ class _EstadisticasViewState extends State<EstadisticasView> {
             children: [
               Text(
                 '${pct.toStringAsFixed(1)}% completado',
-                style: TextStyle(
+                style: const TextStyle(
                   color: AppTheme.accent,
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
@@ -355,7 +354,11 @@ class _EstadisticasViewState extends State<EstadisticasView> {
               ),
               Text(
                 '${s.completadas} de ${s.total}',
-                style: const TextStyle(color: Colors.grey, fontSize: 12),
+                // ✅ onSurface con opacidad en lugar de Colors.grey fijo
+                style: TextStyle(
+                  color: colorScheme.onSurface.withOpacity(0.5),
+                  fontSize: 12,
+                ),
               ),
             ],
           ),
@@ -365,12 +368,12 @@ class _EstadisticasViewState extends State<EstadisticasView> {
             child: LinearProgressIndicator(
               value: pct / 100,
               minHeight: 12,
-              backgroundColor: Colors.grey.shade200,
+              // ✅ onSurface con opacidad en lugar de Colors.grey.shade200 fijo
+              backgroundColor: colorScheme.onSurface.withOpacity(0.1),
               valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.accent),
             ),
           ),
           const SizedBox(height: 16),
-          // Mini stats en fila
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -398,8 +401,14 @@ class _EstadisticasViewState extends State<EstadisticasView> {
 
   // ── Actividad últimos 7 días ──────────────────────────────────────────────
   Widget _buildActividadSemanal(EstadisticasTareas s) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final primaryColor = AppTheme.primaryOf(context);
     final entries = s.completadasPorDia.entries.toList();
     final maxVal = entries.fold(0, (a, b) => a > b.value ? a : b.value);
+    // ✅ Colores de grilla y etiquetas desde el tema
+    final gridColor = colorScheme.onSurface.withOpacity(0.07);
+    final labelColor = colorScheme.onSurface.withOpacity(0.45);
+    final emptyBarColor = colorScheme.onSurface.withOpacity(0.08);
 
     return _SeccionCard(
       titulo: 'Actividad esta semana',
@@ -415,9 +424,7 @@ class _EstadisticasViewState extends State<EstadisticasView> {
                 barRods: [
                   BarChartRodData(
                     toY: entries[i].value.toDouble(),
-                    color: entries[i].value > 0
-                        ? AppTheme.primary
-                        : Colors.grey.shade200,
+                    color: entries[i].value > 0 ? primaryColor : emptyBarColor,
                     width: 22,
                     borderRadius: BorderRadius.circular(6),
                   ),
@@ -435,10 +442,7 @@ class _EstadisticasViewState extends State<EstadisticasView> {
                       padding: const EdgeInsets.only(top: 6),
                       child: Text(
                         entries[i].key,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: Colors.grey,
-                        ),
+                        style: TextStyle(fontSize: 10, color: labelColor),
                       ),
                     );
                   },
@@ -450,7 +454,7 @@ class _EstadisticasViewState extends State<EstadisticasView> {
                   reservedSize: 24,
                   getTitlesWidget: (v, _) => Text(
                     v.toInt().toString(),
-                    style: const TextStyle(fontSize: 10, color: Colors.grey),
+                    style: TextStyle(fontSize: 10, color: labelColor),
                   ),
                 ),
               ),
@@ -466,7 +470,7 @@ class _EstadisticasViewState extends State<EstadisticasView> {
               show: true,
               drawVerticalLine: false,
               getDrawingHorizontalLine: (_) =>
-                  FlLine(color: Colors.grey.shade100, strokeWidth: 1),
+                  FlLine(color: gridColor, strokeWidth: 1),
             ),
           ),
         ),
@@ -476,6 +480,7 @@ class _EstadisticasViewState extends State<EstadisticasView> {
 
   // ── Distribución por tipo (PieChart) ──────────────────────────────────────
   Widget _buildDistribucionTipo(EstadisticasTareas s) {
+    final colorScheme = Theme.of(context).colorScheme;
     final entries = s.porTipo.entries.toList();
     final total = entries.fold(0, (a, b) => a + b.value);
 
@@ -484,7 +489,6 @@ class _EstadisticasViewState extends State<EstadisticasView> {
       icono: Icons.donut_large_rounded,
       child: Row(
         children: [
-          // PieChart
           SizedBox(
             width: 140,
             height: 140,
@@ -512,7 +516,6 @@ class _EstadisticasViewState extends State<EstadisticasView> {
             ),
           ),
           const SizedBox(width: 16),
-          // Leyenda
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -536,9 +539,10 @@ class _EstadisticasViewState extends State<EstadisticasView> {
                       Expanded(
                         child: Text(
                           entries[i].key,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: Color(0xFF1A1A2E),
+                            // ✅ onSurface del tema en lugar de Color(0xFF1A1A2E) fijo
+                            color: colorScheme.onSurface,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -564,6 +568,7 @@ class _EstadisticasViewState extends State<EstadisticasView> {
 
   // ── Tareas por materia (barras horizontales) ──────────────────────────────
   Widget _buildTareasPorMateria(EstadisticasTareas s) {
+    final colorScheme = Theme.of(context).colorScheme;
     final entries = s.porMateria.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
     final maxVal = entries.first.value;
@@ -587,10 +592,11 @@ class _EstadisticasViewState extends State<EstadisticasView> {
                     Expanded(
                       child: Text(
                         e.key,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF1A1A2E),
+                          // ✅ onSurface del tema en lugar de Color(0xFF1A1A2E) fijo
+                          color: colorScheme.onSurface,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -652,7 +658,6 @@ class _EstadisticasViewState extends State<EstadisticasView> {
             padding: const EdgeInsets.only(bottom: 14),
             child: Row(
               children: [
-                // Etiqueta
                 SizedBox(
                   width: 50,
                   child: Text(
@@ -665,7 +670,6 @@ class _EstadisticasViewState extends State<EstadisticasView> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Barra
                 Expanded(
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(6),
@@ -678,7 +682,6 @@ class _EstadisticasViewState extends State<EstadisticasView> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Valor
                 SizedBox(
                   width: 32,
                   child: Text(
@@ -701,18 +704,21 @@ class _EstadisticasViewState extends State<EstadisticasView> {
 
   // ── Estadísticas de enfoque ───────────────────────────────────────────────
   Widget _buildEstadisticasEnfoque(EstadisticasTareas s) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final primaryColor = AppTheme.primaryOf(context);
     final entries = s.pomodorosPorDia.entries.toList();
     final maxVal = entries.fold(0, (a, b) => a > b.value ? a : b.value);
+    final gridColor = colorScheme.onSurface.withOpacity(0.07);
+    final labelColor = colorScheme.onSurface.withOpacity(0.45);
+    final emptyBarColor = colorScheme.onSurface.withOpacity(0.08);
 
     return Column(
       children: [
-        // Highlights de enfoque
         _SeccionCard(
           titulo: 'Modo Enfoque — resumen',
           icono: Icons.timer_outlined,
           child: Column(
             children: [
-              // Fila de 3 stats principales
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
@@ -744,9 +750,13 @@ class _EstadisticasViewState extends State<EstadisticasView> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Productividad promedio',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                          style: TextStyle(
+                            fontSize: 12,
+                            // ✅ onSurface con opacidad en lugar de Colors.grey fijo
+                            color: colorScheme.onSurface.withOpacity(0.5),
+                          ),
                         ),
                         const SizedBox(height: 6),
                         ClipRRect(
@@ -754,7 +764,9 @@ class _EstadisticasViewState extends State<EstadisticasView> {
                           child: LinearProgressIndicator(
                             value: s.productividadPromedio / 100,
                             minHeight: 10,
-                            backgroundColor: Colors.grey.shade200,
+                            // ✅ onSurface con opacidad en lugar de Colors.grey.shade200
+                            backgroundColor:
+                                colorScheme.onSurface.withOpacity(0.1),
                             valueColor: AlwaysStoppedAnimation<Color>(
                               s.productividadPromedio >= 75
                                   ? AppTheme.accent
@@ -788,14 +800,15 @@ class _EstadisticasViewState extends State<EstadisticasView> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppTheme.primary.withOpacity(0.06),
+                  // ✅ primaryOf(context) en lugar de AppTheme.primary fijo
+                  color: primaryColor.withOpacity(0.06),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
                   children: [
                     Icon(
                       Icons.check_circle_outline_rounded,
-                      color: AppTheme.primary,
+                      color: primaryColor,
                       size: 20,
                     ),
                     const SizedBox(width: 10),
@@ -803,35 +816,40 @@ class _EstadisticasViewState extends State<EstadisticasView> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Tareas finalizadas en sesiones',
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: colorScheme.onSurface.withOpacity(0.5),
+                            ),
                           ),
                           Text(
                             '${s.tareasFinalizadasEnfoque} tarea${s.tareasFinalizadasEnfoque != 1 ? 's' : ''}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.bold,
-                              color: AppTheme.primary,
+                              color: primaryColor,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    // Tiempo total estimado (25 min x pomodoros)
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        const Text(
+                        Text(
                           'Tiempo enfocado',
-                          style: TextStyle(fontSize: 10, color: Colors.grey),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: colorScheme.onSurface.withOpacity(0.5),
+                          ),
                         ),
                         Text(
                           _formatMinutos(s.pomodorosCompletados * 25),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
-                            color: AppTheme.primary,
+                            color: primaryColor,
                           ),
                         ),
                       ],
@@ -845,7 +863,6 @@ class _EstadisticasViewState extends State<EstadisticasView> {
 
         const SizedBox(height: 16),
 
-        // Gráfica de pomodoros por día
         if (s.pomodorosCompletados > 0)
           _SeccionCard(
             titulo: 'Pomodoros esta semana',
@@ -863,7 +880,7 @@ class _EstadisticasViewState extends State<EstadisticasView> {
                           toY: entries[i].value.toDouble(),
                           color: entries[i].value > 0
                               ? AppTheme.warning
-                              : Colors.grey.shade200,
+                              : emptyBarColor,
                           width: 22,
                           borderRadius: BorderRadius.circular(6),
                         ),
@@ -883,10 +900,7 @@ class _EstadisticasViewState extends State<EstadisticasView> {
                             padding: const EdgeInsets.only(top: 6),
                             child: Text(
                               entries[i].key,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                color: Colors.grey,
-                              ),
+                              style: TextStyle(fontSize: 10, color: labelColor),
                             ),
                           );
                         },
@@ -898,10 +912,7 @@ class _EstadisticasViewState extends State<EstadisticasView> {
                         reservedSize: 24,
                         getTitlesWidget: (v, _) => Text(
                           v.toInt().toString(),
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: Colors.grey,
-                          ),
+                          style: TextStyle(fontSize: 10, color: labelColor),
                         ),
                       ),
                     ),
@@ -917,7 +928,7 @@ class _EstadisticasViewState extends State<EstadisticasView> {
                     show: true,
                     drawVerticalLine: false,
                     getDrawingHorizontalLine: (_) =>
-                        FlLine(color: Colors.grey.shade100, strokeWidth: 1),
+                        FlLine(color: gridColor, strokeWidth: 1),
                   ),
                 ),
               ),
@@ -935,9 +946,11 @@ class _EstadisticasViewState extends State<EstadisticasView> {
   }
 
   Widget _buildToggle() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
+        // ✅ onSurface con opacidad en lugar de Colors.grey.shade100 fijo
+        color: colorScheme.onSurface.withOpacity(0.06),
         borderRadius: BorderRadius.circular(14),
       ),
       padding: const EdgeInsets.all(4),
@@ -975,17 +988,28 @@ class _SeccionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme  = Theme.of(context).colorScheme;
+    final isDark       = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = AppTheme.primaryOf(context);
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        // ✅ surface del tema en lugar de Colors.white fijo
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        // ✅ Sombra solo en claro; borde en oscuro
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+        border: isDark
+            ? Border.all(color: const Color(0xFF2A2D45))
+            : null,
       ),
       padding: const EdgeInsets.all(18),
       child: Column(
@@ -996,18 +1020,19 @@ class _SeccionCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: AppTheme.primary.withOpacity(0.1),
+                  color: primaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icono, color: AppTheme.primary, size: 16),
+                child: Icon(icono, color: primaryColor, size: 16),
               ),
               const SizedBox(width: 10),
               Text(
                 titulo,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A2E),
+                  // ✅ onSurface del tema en lugar de Color(0xFF1A1A2E) fijo
+                  color: colorScheme.onSurface,
                 ),
               ),
             ],
@@ -1036,17 +1061,27 @@ class _ResumenTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        // ✅ surface del tema en lugar de Colors.white fijo
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        // ✅ Sombra solo en claro; borde en oscuro
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+        border: isDark
+            ? Border.all(color: const Color(0xFF2A2D45))
+            : null,
       ),
       padding: const EdgeInsets.all(14),
       child: Row(
@@ -1074,7 +1109,11 @@ class _ResumenTile extends StatelessWidget {
               ),
               Text(
                 titulo,
-                style: const TextStyle(fontSize: 11, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 11,
+                  // ✅ onSurface con opacidad en lugar de Colors.grey fijo
+                  color: colorScheme.onSurface.withOpacity(0.5),
+                ),
               ),
             ],
           ),
@@ -1098,6 +1137,7 @@ class _MiniStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       children: [
         Text(
@@ -1109,7 +1149,14 @@ class _MiniStat extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 2),
-        Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            // ✅ onSurface con opacidad en lugar de Colors.grey fijo
+            color: colorScheme.onSurface.withOpacity(0.5),
+          ),
+        ),
       ],
     );
   }
@@ -1130,6 +1177,9 @@ class _ToggleBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme  = Theme.of(context).colorScheme;
+    final primaryColor = AppTheme.primaryOf(context);
+
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
@@ -1138,7 +1188,8 @@ class _ToggleBtn extends StatelessWidget {
           curve: Curves.easeInOut,
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: activo ? Colors.white : Colors.transparent,
+            // ✅ surface del tema (claro: blanco, oscuro: surface oscuro)
+            color: activo ? colorScheme.surface : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
             boxShadow: activo
                 ? [
@@ -1156,7 +1207,10 @@ class _ToggleBtn extends StatelessWidget {
               Icon(
                 icono,
                 size: 16,
-                color: activo ? AppTheme.primary : Colors.grey,
+                // ✅ primaryOf(context) activo / onSurface inactivo
+                color: activo
+                    ? primaryColor
+                    : colorScheme.onSurface.withOpacity(0.4),
               ),
               const SizedBox(width: 6),
               Text(
@@ -1164,7 +1218,9 @@ class _ToggleBtn extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: activo ? AppTheme.primary : Colors.grey,
+                  color: activo
+                      ? primaryColor
+                      : colorScheme.onSurface.withOpacity(0.4),
                 ),
               ),
             ],

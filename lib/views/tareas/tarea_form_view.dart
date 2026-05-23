@@ -18,21 +18,21 @@ class TareaFormView extends StatefulWidget {
 }
 
 class _TareaFormViewState extends State<TareaFormView> {
-  final _formKey = GlobalKey<FormState>();
-  final _titulo = TextEditingController();
+  final _formKey     = GlobalKey<FormState>();
+  final _titulo      = TextEditingController();
   final _descripcion = TextEditingController();
 
-  String _materia = AppConfig.materias.first;
-  String _otraMateria = '';
-  String _tipo = AppConfig.tiposTarea.first;
-  String _prioridad = AppConfig.prioridades[1];
-  DateTime _fecha = DateTime.now().add(const Duration(days: 1));
+  String    _materia    = AppConfig.materias.first;
+  String    _otraMateria = '';
+  String    _tipo       = AppConfig.tiposTarea.first;
+  String    _prioridad  = AppConfig.prioridades[1];
+  DateTime  _fecha      = DateTime.now().add(const Duration(days: 1));
   TimeOfDay? _hora;
   bool _guardando = false;
-  bool _cargando = false;
+  bool _cargando  = false;
 
-  final List<_Adjunto> _adjuntos = [];
-  final List<String> _archivosExistentes = [];
+  final List<_Adjunto> _adjuntos           = [];
+  final List<String>   _archivosExistentes = [];
 
   bool get _esEdicion => widget.id != null;
 
@@ -48,14 +48,14 @@ class _TareaFormViewState extends State<TareaFormView> {
       final t = await TareaService().getById(widget.id!);
       if (!mounted) return;
       setState(() {
-        _titulo.text = t.titulo;
+        _titulo.text      = t.titulo;
         _descripcion.text = t.descripcion;
-        _materia = AppConfig.materias.contains(t.materia) ? t.materia : 'Otra';
-        _otraMateria = AppConfig.materias.contains(t.materia) ? '' : t.materia;
-        _tipo = t.tipo;
-        _prioridad = t.prioridad;
-        _fecha = t.fechaEntrega;
-        _hora = t.horaEntrega;
+        _materia          = AppConfig.materias.contains(t.materia) ? t.materia : 'Otra';
+        _otraMateria      = AppConfig.materias.contains(t.materia) ? '' : t.materia;
+        _tipo             = t.tipo;
+        _prioridad        = t.prioridad;
+        _fecha            = t.fechaEntrega;
+        _hora             = t.horaEntrega;
         _archivosExistentes.addAll(t.archivos);
         _cargando = false;
       });
@@ -67,11 +67,12 @@ class _TareaFormViewState extends State<TareaFormView> {
 
   Future<void> _seleccionarMateria() async {
     await _mostrarSheet<String>(
-      titulo: 'Selecciona una materia',
-      opciones: AppConfig.materias,
+      titulo:      'Selecciona una materia',
+      opciones:    AppConfig.materias,
       seleccionado: _materia,
-      etiqueta: (m) => m,
-      leading: (_) => const Icon(Icons.book_outlined, color: AppTheme.primary),
+      etiqueta:    (m) => m,
+      leading:     (_) => Icon(Icons.book_outlined,
+          color: AppTheme.primaryOf(context)),
       onSeleccion: (v) => setState(() => _materia = v),
     );
 
@@ -84,27 +85,32 @@ class _TareaFormViewState extends State<TareaFormView> {
 
   Future<void> _mostrarDialogoOtraMateria() async {
     final controller = TextEditingController(text: _otraMateria);
+    // ✅ Capturar tema antes del builder
+    final primary    = AppTheme.primaryOf(context);
+    final onSurface  = Theme.of(context).colorScheme.onSurface;
+
     await showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
+        title: Text(
           '¿Cuál es la materia?',
           style: TextStyle(
-            fontSize: 17,
+            fontSize:   17,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF1A1A2E),
+            color:      onSurface,
           ),
         ),
         content: TextField(
-          controller: controller,
-          autofocus: false, // ← sin autofocus
-          textCapitalization: TextCapitalization.sentences,
+          controller:          controller,
+          autofocus:           false,
+          textCapitalization:  TextCapitalization.sentences,
           decoration: InputDecoration(
-            hintText: 'Ej: Cálculo diferencial',
-            prefixIcon: const Icon(Icons.book_outlined),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            hintText:    'Ej: Cálculo diferencial',
+            prefixIcon:  const Icon(Icons.book_outlined),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10)),
           ),
         ),
         actions: [
@@ -115,7 +121,9 @@ class _TareaFormViewState extends State<TareaFormView> {
             },
             child: Text(
               'Cancelar',
-              style: TextStyle(color: Colors.grey.shade600),
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface
+                      .withOpacity(0.6)),
             ),
           ),
           ElevatedButton(
@@ -127,11 +135,10 @@ class _TareaFormViewState extends State<TareaFormView> {
               Navigator.of(context).pop();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primary,
+              backgroundColor: primary,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
+                  borderRadius: BorderRadius.circular(20)),
             ),
             child: const Text('Confirmar'),
           ),
@@ -142,6 +149,9 @@ class _TareaFormViewState extends State<TareaFormView> {
   }
 
   Future<void> _agregarAdjunto() async {
+    // ✅ Capturar tema antes del builder
+    final dividerColor = Theme.of(context).dividerColor;
+
     final opcion = await showModalBottomSheet<String>(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -153,28 +163,27 @@ class _TareaFormViewState extends State<TareaFormView> {
           children: [
             const SizedBox(height: 8),
             Container(
-              width: 40,
-              height: 4,
+              width: 40, height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color:        dividerColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             const SizedBox(height: 16),
             ListTile(
               leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Elegir imagen de galería'),
-              onTap: () => Navigator.pop(context, 'galeria'),
+              title:   const Text('Elegir imagen de galería'),
+              onTap:   () => Navigator.pop(context, 'galeria'),
             ),
             ListTile(
               leading: const Icon(Icons.camera_alt_outlined),
-              title: const Text('Tomar foto'),
-              onTap: () => Navigator.pop(context, 'camara'),
+              title:   const Text('Tomar foto'),
+              onTap:   () => Navigator.pop(context, 'camara'),
             ),
             ListTile(
               leading: const Icon(Icons.attach_file_outlined),
-              title: const Text('Elegir archivo (PDF)'),
-              onTap: () => Navigator.pop(context, 'archivo'),
+              title:   const Text('Elegir archivo (PDF)'),
+              onTap:   () => Navigator.pop(context, 'archivo'),
             ),
             const SizedBox(height: 8),
           ],
@@ -189,9 +198,9 @@ class _TareaFormViewState extends State<TareaFormView> {
           ? ImageSource.camera
           : ImageSource.gallery;
       final picked = await ImagePicker().pickImage(
-        source: source,
+        source:       source,
         imageQuality: 85,
-        maxWidth: 800,
+        maxWidth:     800,
       );
       if (picked == null) return;
       final bytes = await picked.readAsBytes();
@@ -200,20 +209,16 @@ class _TareaFormViewState extends State<TareaFormView> {
         _mostrarError('La imagen supera el límite de 5 MB');
         return;
       }
-      setState(
-        () => _adjuntos.add(
-          _Adjunto(
-            nombre: picked.name,
-            bytes: bytes,
-            tipo: _TipoAdjunto.imagen,
-          ),
-        ),
-      );
+      setState(() => _adjuntos.add(_Adjunto(
+        nombre: picked.name,
+        bytes:  bytes,
+        tipo:   _TipoAdjunto.imagen,
+      )));
     } else {
       final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
+        type:              FileType.custom,
         allowedExtensions: ['pdf'],
-        withData: true,
+        withData:          true,
       );
       if (result == null || result.files.isEmpty) return;
       final file = result.files.first;
@@ -222,22 +227,17 @@ class _TareaFormViewState extends State<TareaFormView> {
         _mostrarError('El archivo supera el límite de 5 MB');
         return;
       }
-      setState(
-        () => _adjuntos.add(
-          _Adjunto(
-            nombre: file.name,
-            bytes: file.bytes!,
-            tipo: _TipoAdjunto.pdf,
-          ),
-        ),
-      );
+      setState(() => _adjuntos.add(_Adjunto(
+        nombre: file.name,
+        bytes:  file.bytes!,
+        tipo:   _TipoAdjunto.pdf,
+      )));
     }
   }
 
   void _mostrarError(String msg) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg), backgroundColor: Colors.red));
   }
 
   Future<void> _mostrarSheet<T>({
@@ -248,18 +248,24 @@ class _TareaFormViewState extends State<TareaFormView> {
     required Widget Function(T)? leading,
     required void Function(T) onSeleccion,
   }) async {
+    // ✅ Capturar tema antes del builder
+    final primary      = AppTheme.primaryOf(context);
+    final onSurface    = Theme.of(context).colorScheme.onSurface;
+    final surfaceColor = Theme.of(context).colorScheme.surface;
+    final dividerColor = Theme.of(context).dividerColor;
+
     await showModalBottomSheet(
-      context: context,
+      context:         context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withOpacity(0.5),
+      barrierColor:    Colors.black.withOpacity(0.5),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (_) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        decoration: BoxDecoration(
+          color:        surfaceColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.only(bottom: 24),
         child: Column(
@@ -267,10 +273,9 @@ class _TareaFormViewState extends State<TareaFormView> {
           children: [
             const SizedBox(height: 12),
             Container(
-              width: 40,
-              height: 4,
+              width: 40, height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color:        dividerColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -281,10 +286,10 @@ class _TareaFormViewState extends State<TareaFormView> {
                 children: [
                   Text(
                     titulo,
-                    style: const TextStyle(
-                      fontSize: 17,
+                    style: TextStyle(
+                      fontSize:   17,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A2E),
+                      color:      onSurface,
                     ),
                   ),
                 ],
@@ -302,13 +307,11 @@ class _TareaFormViewState extends State<TareaFormView> {
                     fontWeight: estaSeleccionado
                         ? FontWeight.w600
                         : FontWeight.normal,
-                    color: estaSeleccionado
-                        ? AppTheme.primary
-                        : const Color(0xFF1A1A2E),
+                    color: estaSeleccionado ? primary : onSurface,
                   ),
                 ),
                 trailing: estaSeleccionado
-                    ? const Icon(Icons.check_rounded, color: AppTheme.primary)
+                    ? Icon(Icons.check_rounded, color: primary)
                     : null,
                 onTap: () {
                   onSeleccion(op);
@@ -323,39 +326,45 @@ class _TareaFormViewState extends State<TareaFormView> {
   }
 
   Future<bool> _mostrarConfirmacion() async {
+    // ✅ Capturar tema antes del builder
+    final primary      = AppTheme.primaryOf(context);
+    final onSurface    = Theme.of(context).colorScheme.onSurface;
+    final surfaceColor = Theme.of(context).colorScheme.surface;
+    final dividerColor = Theme.of(context).dividerColor;
+
     return await showModalBottomSheet<bool>(
-          context: context,
+          context:         context,
           backgroundColor: Colors.transparent,
-          barrierColor: Colors.black.withOpacity(0.5),
+          barrierColor:    Colors.black.withOpacity(0.5),
           builder: (_) => Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            decoration: BoxDecoration(
+              color:        surfaceColor,
+              borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24)),
             ),
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 36),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 64,
-                  height: 64,
+                  width: 64, height: 64,
                   decoration: BoxDecoration(
-                    color: AppTheme.primary.withOpacity(0.12),
-                    shape: BoxShape.circle,
+                    color:  primary.withOpacity(0.12),
+                    shape:  BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.assignment_outlined,
-                    color: AppTheme.primary,
-                    size: 32,
+                    color: primary,
+                    size:  32,
                   ),
                 ),
                 const SizedBox(height: 16),
                 Text(
                   _esEdicion ? 'Actualizar tarea' : 'Crear nueva tarea',
-                  style: const TextStyle(
-                    fontSize: 18,
+                  style: TextStyle(
+                    fontSize:   18,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A1A2E),
+                    color:      onSurface,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -364,7 +373,10 @@ class _TareaFormViewState extends State<TareaFormView> {
                       ? 'Revisa los cambios antes de guardar. ¿Deseas continuar?'
                       : 'Revisa los datos de tu tarea antes de crearla. ¿Deseas continuar?',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color:    onSurface.withOpacity(0.55),
+                  ),
                 ),
                 const SizedBox(height: 24),
                 SizedBox(
@@ -372,16 +384,14 @@ class _TareaFormViewState extends State<TareaFormView> {
                   child: ElevatedButton(
                     onPressed: () => Navigator.pop(context, true),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primary,
+                      backgroundColor: primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
+                          borderRadius: BorderRadius.circular(30)),
                     ),
                     child: Text(
-                      _esEdicion ? 'Sí, actualizar' : 'Sí, crear ahora',
-                    ),
+                        _esEdicion ? 'Sí, actualizar' : 'Sí, crear ahora'),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -390,16 +400,13 @@ class _TareaFormViewState extends State<TareaFormView> {
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(context, false),
                     style: OutlinedButton.styleFrom(
+                      foregroundColor: onSurface,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      side: BorderSide(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(30)),
+                      side: BorderSide(color: dividerColor),
                     ),
-                    child: const Text(
-                      'No, revisar',
-                      style: TextStyle(color: Color(0xFF1A1A2E)),
-                    ),
+                    child: const Text('No, revisar'),
                   ),
                 ),
               ],
@@ -410,40 +417,45 @@ class _TareaFormViewState extends State<TareaFormView> {
   }
 
   Future<void> _mostrarExito() async {
+    // ✅ Capturar tema antes del builder
+    final primary      = AppTheme.primaryOf(context);
+    final onSurface    = Theme.of(context).colorScheme.onSurface;
+    final surfaceColor = Theme.of(context).colorScheme.surface;
+
     await showModalBottomSheet(
-      context: context,
+      context:         context,
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withOpacity(0.5),
-      isDismissible: false,
+      barrierColor:    Colors.black.withOpacity(0.5),
+      isDismissible:   false,
       builder: (_) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        decoration: BoxDecoration(
+          color:        surfaceColor,
+          borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 36),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 64,
-              height: 64,
+              width: 64, height: 64,
               decoration: BoxDecoration(
-                color: AppTheme.accent.withOpacity(0.15),
-                shape: BoxShape.circle,
+                color:  AppTheme.accent.withOpacity(0.15),
+                shape:  BoxShape.circle,
               ),
               child: const Icon(
                 Icons.check_rounded,
                 color: AppTheme.accent,
-                size: 36,
+                size:  36,
               ),
             ),
             const SizedBox(height: 16),
             Text(
               _esEdicion ? '¡Tarea actualizada!' : '¡Tarea creada!',
-              style: const TextStyle(
-                fontSize: 18,
+              style: TextStyle(
+                fontSize:   18,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1A1A2E),
+                color:      onSurface,
               ),
             ),
             const SizedBox(height: 8),
@@ -452,7 +464,10 @@ class _TareaFormViewState extends State<TareaFormView> {
                   ? 'Los cambios se guardaron correctamente.'
                   : '¡Felicidades! Tu tarea fue registrada exitosamente.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+              style: TextStyle(
+                fontSize: 13,
+                color:    onSurface.withOpacity(0.55),
+              ),
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -463,12 +478,11 @@ class _TareaFormViewState extends State<TareaFormView> {
                   context.pop();
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
+                  backgroundColor: primary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
+                      borderRadius: BorderRadius.circular(30)),
                 ),
                 child: const Text('Ver mis tareas'),
               ),
@@ -488,11 +502,8 @@ class _TareaFormViewState extends State<TareaFormView> {
     setState(() => _guardando = true);
     try {
       final List<String> urlsAdjuntos = [];
-
-      // Conserva los archivos que ya estaban
       urlsAdjuntos.addAll(_archivosExistentes);
 
-      // Sube y agrega los nuevos
       for (final adj in _adjuntos) {
         final String url;
         if (adj.tipo == _TipoAdjunto.pdf) {
@@ -505,16 +516,16 @@ class _TareaFormViewState extends State<TareaFormView> {
 
       final tarea = Tarea(
         firestoreId: widget.id,
-        titulo: _titulo.text.trim(),
+        titulo:      _titulo.text.trim(),
         descripcion: _descripcion.text.trim(),
-        materia: _materia == 'Otra' && _otraMateria.isNotEmpty
-            ? _otraMateria // ← guarda el nombre real
+        materia:     _materia == 'Otra' && _otraMateria.isNotEmpty
+            ? _otraMateria
             : _materia,
-        tipo: _tipo,
-        prioridad: _prioridad,
+        tipo:       _tipo,
+        prioridad:  _prioridad,
         fechaEntrega: _fecha,
-        horaEntrega: _hora,
-        archivos: urlsAdjuntos,
+        horaEntrega:  _hora,
+        archivos:     urlsAdjuntos,
       );
 
       if (_esEdicion) {
@@ -541,23 +552,26 @@ class _TareaFormViewState extends State<TareaFormView> {
   }
 
   Widget _campoSelector({
-    required String label,
-    required String valor,
-    required IconData icono,
+    required String    label,
+    required String    valor,
+    required IconData  icono,
     required VoidCallback onTap,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.grey.shade50,
+          color: isDark ? const Color(0xFF242840) : Colors.grey.shade50,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.grey.shade400),
+          border: Border.all(color: Theme.of(context).dividerColor),
         ),
         child: Row(
           children: [
-            Icon(icono, color: Colors.grey.shade600, size: 20),
+            Icon(icono,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                size: 20),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -565,23 +579,30 @@ class _TareaFormViewState extends State<TareaFormView> {
                 children: [
                   Text(
                     label,
-                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.5),
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     valor,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
-                      color: Color(0xFF1A1A2E),
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(
-              Icons.keyboard_arrow_down_rounded,
-              color: Colors.grey.shade500,
-            ),
+            Icon(Icons.keyboard_arrow_down_rounded,
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withOpacity(0.5)),
           ],
         ),
       ),
@@ -590,8 +611,11 @@ class _TareaFormViewState extends State<TareaFormView> {
 
   @override
   Widget build(BuildContext context) {
+    final primary  = AppTheme.primaryOf(context);
+    final isDark   = Theme.of(context).brightness == Brightness.dark;
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FA),
       body: _cargando
           ? const Center(child: CircularProgressIndicator())
           : CustomScrollView(
@@ -599,26 +623,24 @@ class _TareaFormViewState extends State<TareaFormView> {
                 // ── Header ───────────────────────────────────────────
                 SliverToBoxAdapter(
                   child: Container(
-                    decoration: const BoxDecoration(
-                      color: AppTheme.primary,
-                      borderRadius: BorderRadius.only(
-                        bottomLeft: Radius.circular(28),
+                    decoration: BoxDecoration(
+                      color: primary,
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft:  Radius.circular(28),
                         bottomRight: Radius.circular(28),
                       ),
                     ),
                     padding: EdgeInsets.only(
-                      top: MediaQuery.of(context).padding.top + 8,
+                      top:    MediaQuery.of(context).padding.top + 8,
                       bottom: 20,
-                      left: 8,
-                      right: 20,
+                      left:   8,
+                      right:  20,
                     ),
                     child: Row(
                       children: [
                         IconButton(
-                          icon: const Icon(
-                            Icons.arrow_back_rounded,
-                            color: Colors.white,
-                          ),
+                          icon: const Icon(Icons.arrow_back_rounded,
+                              color: Colors.white),
                           onPressed: () => context.pop(),
                         ),
                         Expanded(
@@ -626,8 +648,8 @@ class _TareaFormViewState extends State<TareaFormView> {
                             _esEdicion ? 'Editar tarea' : 'Nueva tarea',
                             textAlign: TextAlign.center,
                             style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
+                              color:      Colors.white,
+                              fontSize:   18,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -654,7 +676,7 @@ class _TareaFormViewState extends State<TareaFormView> {
                               'Formato: imagen o PDF, máximo 5 MB',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Colors.grey.shade500,
+                                color: onSurface.withOpacity(0.5),
                               ),
                             ),
                             const SizedBox(height: 10),
@@ -665,153 +687,144 @@ class _TareaFormViewState extends State<TareaFormView> {
                                 children: [
                                   // ── Botón agregar ──────────────
                                   GestureDetector(
-                                    onTap:
-                                        (_adjuntos.length +
+                                    onTap: (_adjuntos.length +
                                                 _archivosExistentes.length) <
                                             3
                                         ? _agregarAdjunto
                                         : null,
                                     child: Container(
-                                      width: 80,
+                                      width:  80,
                                       height: 80,
                                       margin: const EdgeInsets.only(right: 10),
                                       decoration: BoxDecoration(
-                                        color: AppTheme.primary.withOpacity(
-                                          0.08,
-                                        ),
-                                        borderRadius: BorderRadius.circular(12),
+                                        color: primary.withOpacity(0.08),
+                                        borderRadius:
+                                            BorderRadius.circular(12),
                                         border: Border.all(
-                                          color: AppTheme.primary.withOpacity(
-                                            0.3,
-                                          ),
+                                          color: primary.withOpacity(0.3),
                                           style: BorderStyle.solid,
                                         ),
                                       ),
                                       child: Icon(
                                         Icons.add_rounded,
-                                        color:
-                                            (_adjuntos.length +
+                                        color: (_adjuntos.length +
                                                     _archivosExistentes
                                                         .length) <
                                                 3
-                                            ? AppTheme.primary
-                                            : Colors.grey,
+                                            ? primary
+                                            : onSurface.withOpacity(0.3),
                                         size: 32,
                                       ),
                                     ),
                                   ),
 
                                   // ── Archivos existentes (edición) ──
-                                  ..._archivosExistentes.asMap().entries.map((
-                                    e,
-                                  ) {
-                                    final i = e.key;
-                                    final url = e.value;
-                                    final esImagen =
-                                        url.toLowerCase().contains(
-                                          '/image/upload/',
-                                        ) ||
-                                        url.toLowerCase().endsWith('.jpg') ||
-                                        url.toLowerCase().endsWith('.jpeg') ||
-                                        url.toLowerCase().endsWith('.png');
-                                    return Stack(
-                                      children: [
-                                        Container(
-                                          width: 80,
-                                          height: 80,
-                                          margin: const EdgeInsets.only(
-                                            right: 10,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey.shade200,
-                                            borderRadius: BorderRadius.circular(
-                                              12,
+                                  ..._archivosExistentes.asMap().entries.map(
+                                    (e) {
+                                      final i   = e.key;
+                                      final url = e.value;
+                                      final esImagen =
+                                          url.toLowerCase().contains(
+                                                  '/image/upload/') ||
+                                              url.toLowerCase().endsWith(
+                                                  '.jpg') ||
+                                              url.toLowerCase().endsWith(
+                                                  '.jpeg') ||
+                                              url.toLowerCase().endsWith(
+                                                  '.png');
+                                      return Stack(
+                                        children: [
+                                          Container(
+                                            width:  80,
+                                            height: 80,
+                                            margin: const EdgeInsets.only(
+                                                right: 10),
+                                            decoration: BoxDecoration(
+                                              color: isDark
+                                                  ? const Color(0xFF242840)
+                                                  : Colors.grey.shade200,
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
                                             ),
-                                          ),
-                                          child: esImagen
-                                              ? ClipRRect(
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                  child: Image.network(
-                                                    url,
-                                                    fit: BoxFit.cover,
-                                                  ),
-                                                )
-                                              : Column(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.center,
-                                                  children: [
-                                                    const Icon(
-                                                      Icons
-                                                          .picture_as_pdf_rounded,
-                                                      color: Colors.red,
-                                                      size: 28,
-                                                    ),
-                                                    const SizedBox(height: 4),
-                                                    const Text(
-                                                      'PDF',
-                                                      style: TextStyle(
-                                                        fontSize: 9,
+                                            child: esImagen
+                                                ? ClipRRect(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            12),
+                                                    child: Image.network(url,
+                                                        fit: BoxFit.cover),
+                                                  )
+                                                : Column(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
+                                                    children: const [
+                                                      Icon(
+                                                        Icons
+                                                            .picture_as_pdf_rounded,
+                                                        color: Colors.red,
+                                                        size: 28,
                                                       ),
-                                                      textAlign:
-                                                          TextAlign.center,
-                                                    ),
-                                                  ],
+                                                      SizedBox(height: 4),
+                                                      Text('PDF',
+                                                          style: TextStyle(
+                                                              fontSize: 9),
+                                                          textAlign:
+                                                              TextAlign.center),
+                                                    ],
+                                                  ),
+                                          ),
+                                          Positioned(
+                                            top:   0,
+                                            right: 8,
+                                            child: GestureDetector(
+                                              onTap: () => setState(() =>
+                                                  _archivosExistentes
+                                                      .removeAt(i)),
+                                              child: Container(
+                                                width:  20,
+                                                height: 20,
+                                                decoration:
+                                                    const BoxDecoration(
+                                                  color: Colors.red,
+                                                  shape: BoxShape.circle,
                                                 ),
-                                        ),
-                                        Positioned(
-                                          top: 0,
-                                          right: 8,
-                                          child: GestureDetector(
-                                            onTap: () => setState(
-                                              () => _archivosExistentes
-                                                  .removeAt(i),
-                                            ),
-                                            child: Container(
-                                              width: 20,
-                                              height: 20,
-                                              decoration: const BoxDecoration(
-                                                color: Colors.red,
-                                                shape: BoxShape.circle,
-                                              ),
-                                              child: const Icon(
-                                                Icons.close,
-                                                size: 12,
-                                                color: Colors.white,
+                                                child: const Icon(Icons.close,
+                                                    size:  12,
+                                                    color: Colors.white),
                                               ),
                                             ),
                                           ),
-                                        ),
-                                      ],
-                                    );
-                                  }),
+                                        ],
+                                      );
+                                    },
+                                  ),
 
                                   // ── Archivos nuevos ────────────
                                   ..._adjuntos.asMap().entries.map((e) {
-                                    final i = e.key;
+                                    final i   = e.key;
                                     final adj = e.value;
                                     return Stack(
                                       children: [
                                         Container(
-                                          width: 80,
+                                          width:  80,
                                           height: 80,
                                           margin: const EdgeInsets.only(
-                                            right: 10,
-                                          ),
+                                              right: 10),
                                           decoration: BoxDecoration(
-                                            color: Colors.grey.shade200,
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
+                                            color: isDark
+                                                ? const Color(0xFF242840)
+                                                : Colors.grey.shade200,
+                                            borderRadius:
+                                                BorderRadius.circular(12),
                                           ),
-                                          child: adj.tipo == _TipoAdjunto.imagen
+                                          child: adj.tipo ==
+                                                  _TipoAdjunto.imagen
                                               ? ClipRRect(
                                                   borderRadius:
                                                       BorderRadius.circular(12),
-                                                  child: Image.memory(
-                                                    adj.bytes,
-                                                    fit: BoxFit.cover,
-                                                  ),
+                                                  child: Image.memory(adj.bytes,
+                                                      fit: BoxFit.cover),
                                                 )
                                               : Column(
                                                   mainAxisAlignment:
@@ -827,8 +840,7 @@ class _TareaFormViewState extends State<TareaFormView> {
                                                     Text(
                                                       adj.nombre,
                                                       style: const TextStyle(
-                                                        fontSize: 9,
-                                                      ),
+                                                          fontSize: 9),
                                                       textAlign:
                                                           TextAlign.center,
                                                       overflow:
@@ -839,24 +851,21 @@ class _TareaFormViewState extends State<TareaFormView> {
                                                 ),
                                         ),
                                         Positioned(
-                                          top: 0,
+                                          top:   0,
                                           right: 8,
                                           child: GestureDetector(
                                             onTap: () => setState(
-                                              () => _adjuntos.removeAt(i),
-                                            ),
+                                                () => _adjuntos.removeAt(i)),
                                             child: Container(
-                                              width: 20,
+                                              width:  20,
                                               height: 20,
                                               decoration: const BoxDecoration(
                                                 color: Colors.red,
                                                 shape: BoxShape.circle,
                                               ),
-                                              child: const Icon(
-                                                Icons.close,
-                                                size: 12,
-                                                color: Colors.white,
-                                              ),
+                                              child: const Icon(Icons.close,
+                                                  size:  12,
+                                                  color: Colors.white),
                                             ),
                                           ),
                                         ),
@@ -875,7 +884,7 @@ class _TareaFormViewState extends State<TareaFormView> {
                             TextFormField(
                               controller: _titulo,
                               decoration: const InputDecoration(
-                                labelText: 'Título *',
+                                labelText:  'Título *',
                                 prefixIcon: Icon(Icons.title),
                               ),
                               validator: (v) => v == null || v.isEmpty
@@ -888,7 +897,7 @@ class _TareaFormViewState extends State<TareaFormView> {
                             TextFormField(
                               controller: _descripcion,
                               decoration: const InputDecoration(
-                                labelText: 'Descripción',
+                                labelText:  'Descripción',
                                 prefixIcon: Icon(Icons.description),
                               ),
                               maxLines: 3,
@@ -898,8 +907,8 @@ class _TareaFormViewState extends State<TareaFormView> {
                             // Materia
                             _campoSelector(
                               label: 'Materia *',
-                              valor:
-                                  _materia == 'Otra' && _otraMateria.isNotEmpty
+                              valor: _materia == 'Otra' &&
+                                      _otraMateria.isNotEmpty
                                   ? _otraMateria
                                   : _materia,
                               icono: Icons.book_outlined,
@@ -913,15 +922,15 @@ class _TareaFormViewState extends State<TareaFormView> {
                               valor: _tipo,
                               icono: Icons.category_outlined,
                               onTap: () => _mostrarSheet<String>(
-                                titulo: 'Selecciona el tipo',
-                                opciones: AppConfig.tiposTarea,
+                                titulo:       'Selecciona el tipo',
+                                opciones:     AppConfig.tiposTarea,
                                 seleccionado: _tipo,
-                                etiqueta: (t) => t,
-                                leading: (_) => const Icon(
-                                  Icons.category_outlined,
-                                  color: AppTheme.primary,
-                                ),
-                                onSeleccion: (v) => setState(() => _tipo = v),
+                                etiqueta:     (t) => t,
+                                leading: (_) => Icon(
+                                    Icons.category_outlined,
+                                    color: AppTheme.primaryOf(context)),
+                                onSeleccion: (v) =>
+                                    setState(() => _tipo = v),
                               ),
                             ),
                             const SizedBox(height: 12),
@@ -932,13 +941,13 @@ class _TareaFormViewState extends State<TareaFormView> {
                               valor: _prioridad,
                               icono: Icons.flag_outlined,
                               onTap: () => _mostrarSheet<String>(
-                                titulo: 'Selecciona la prioridad',
-                                opciones: AppConfig.prioridades,
+                                titulo:       'Selecciona la prioridad',
+                                opciones:     AppConfig.prioridades,
                                 seleccionado: _prioridad,
-                                etiqueta: (p) => p,
+                                etiqueta:     (p) => p,
                                 leading: (p) => Icon(
                                   Icons.circle,
-                                  size: 14,
+                                  size:  14,
                                   color: AppTheme.colorPrioridad(p),
                                 ),
                                 onSeleccion: (v) =>
@@ -951,14 +960,12 @@ class _TareaFormViewState extends State<TareaFormView> {
                             GestureDetector(
                               onTap: () async {
                                 final picked = await showDatePicker(
-                                  context: context,
+                                  context:     context,
                                   initialDate: _fecha,
-                                  firstDate: DateTime.now().subtract(
-                                    const Duration(days: 1),
-                                  ),
-                                  lastDate: DateTime.now().add(
-                                    const Duration(days: 365),
-                                  ),
+                                  firstDate: DateTime.now()
+                                      .subtract(const Duration(days: 1)),
+                                  lastDate: DateTime.now()
+                                      .add(const Duration(days: 365)),
                                 );
                                 if (picked != null) {
                                   setState(() => _fecha = picked);
@@ -966,23 +973,20 @@ class _TareaFormViewState extends State<TareaFormView> {
                               },
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 14,
-                                ),
+                                    horizontal: 16, vertical: 14),
                                 decoration: BoxDecoration(
-                                  color: Colors.grey.shade50,
+                                  color: isDark
+                                      ? const Color(0xFF242840)
+                                      : Colors.grey.shade50,
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(
-                                    color: Colors.grey.shade400,
-                                  ),
+                                      color: Theme.of(context).dividerColor),
                                 ),
                                 child: Row(
                                   children: [
-                                    Icon(
-                                      Icons.calendar_today_outlined,
-                                      color: Colors.grey.shade600,
-                                      size: 20,
-                                    ),
+                                    Icon(Icons.calendar_today_outlined,
+                                        color: onSurface.withOpacity(0.6),
+                                        size: 20),
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Column(
@@ -993,41 +997,38 @@ class _TareaFormViewState extends State<TareaFormView> {
                                             'Fecha de entrega *',
                                             style: TextStyle(
                                               fontSize: 11,
-                                              color: Colors.grey.shade500,
+                                              color: onSurface.withOpacity(0.5),
                                             ),
                                           ),
                                           const SizedBox(height: 2),
                                           Text(
                                             '${_fecha.day}/${_fecha.month}/${_fecha.year}',
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 15,
-                                              color: Color(0xFF1A1A2E),
+                                              color: onSurface,
                                             ),
                                           ),
                                         ],
                                       ),
                                     ),
-                                    Icon(
-                                      Icons.keyboard_arrow_down_rounded,
-                                      color: Colors.grey.shade500,
-                                    ),
+                                    Icon(Icons.keyboard_arrow_down_rounded,
+                                        color: onSurface.withOpacity(0.5)),
                                   ],
                                 ),
                               ),
                             ),
                             const SizedBox(height: 12),
 
-                            // Hora de vencimiento
+                            // Hora
                             GestureDetector(
                               onTap: () async {
                                 final picked = await showTimePicker(
-                                  context: context,
+                                  context:     context,
                                   initialTime: _hora ?? TimeOfDay.now(),
                                   builder: (context, child) {
                                     return MediaQuery(
-                                      data: MediaQuery.of(
-                                        context,
-                                      ).copyWith(alwaysUse24HourFormat: true),
+                                      data: MediaQuery.of(context).copyWith(
+                                          alwaysUse24HourFormat: true),
                                       child: child!,
                                     );
                                   },
@@ -1038,23 +1039,20 @@ class _TareaFormViewState extends State<TareaFormView> {
                               },
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 14,
-                                ),
+                                    horizontal: 16, vertical: 14),
                                 decoration: BoxDecoration(
-                                  color: Colors.grey.shade50,
+                                  color: isDark
+                                      ? const Color(0xFF242840)
+                                      : Colors.grey.shade50,
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(
-                                    color: Colors.grey.shade400,
-                                  ),
+                                      color: Theme.of(context).dividerColor),
                                 ),
                                 child: Row(
                                   children: [
-                                    Icon(
-                                      Icons.access_time_rounded,
-                                      color: Colors.grey.shade600,
-                                      size: 20,
-                                    ),
+                                    Icon(Icons.access_time_rounded,
+                                        color: onSurface.withOpacity(0.6),
+                                        size: 20),
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Column(
@@ -1065,7 +1063,7 @@ class _TareaFormViewState extends State<TareaFormView> {
                                             'Hora de vencimiento',
                                             style: TextStyle(
                                               fontSize: 11,
-                                              color: Colors.grey.shade500,
+                                              color: onSurface.withOpacity(0.5),
                                             ),
                                           ),
                                           const SizedBox(height: 2),
@@ -1076,8 +1074,8 @@ class _TareaFormViewState extends State<TareaFormView> {
                                             style: TextStyle(
                                               fontSize: 15,
                                               color: _hora != null
-                                                  ? const Color(0xFF1A1A2E)
-                                                  : Colors.grey.shade400,
+                                                  ? onSurface
+                                                  : onSurface.withOpacity(0.35),
                                             ),
                                           ),
                                         ],
@@ -1089,17 +1087,15 @@ class _TareaFormViewState extends State<TareaFormView> {
                                           GestureDetector(
                                             onTap: () =>
                                                 setState(() => _hora = null),
-                                            child: Icon(
-                                              Icons.close_rounded,
-                                              color: Colors.grey.shade400,
-                                              size: 18,
-                                            ),
+                                            child: Icon(Icons.close_rounded,
+                                                color: onSurface
+                                                    .withOpacity(0.4),
+                                                size: 18),
                                           ),
                                         const SizedBox(width: 4),
                                         Icon(
-                                          Icons.keyboard_arrow_down_rounded,
-                                          color: Colors.grey.shade500,
-                                        ),
+                                            Icons.keyboard_arrow_down_rounded,
+                                            color: onSurface.withOpacity(0.5)),
                                       ],
                                     ),
                                   ],
@@ -1113,12 +1109,10 @@ class _TareaFormViewState extends State<TareaFormView> {
                               onPressed: _guardando ? null : _guardar,
                               icon: _guardando
                                   ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
+                                      width: 18, height: 18,
                                       child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
+                                          strokeWidth: 2,
+                                          color: Colors.white),
                                     )
                                   : const Icon(Icons.save_outlined),
                               label: Text(
@@ -1129,12 +1123,13 @@ class _TareaFormViewState extends State<TareaFormView> {
                                           : 'Crear tarea'),
                               ),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.primary,
+                                backgroundColor: primary,
                                 foregroundColor: Colors.white,
-                                minimumSize: const Size(double.infinity, 52),
+                                minimumSize:
+                                    const Size(double.infinity, 52),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
+                                    borderRadius:
+                                        BorderRadius.circular(30)),
                                 elevation: 2,
                               ),
                             ),
@@ -1162,10 +1157,10 @@ class _SeccionLabel extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 4),
       child: Text(
         texto,
-        style: const TextStyle(
-          fontSize: 13,
+        style: TextStyle(
+          fontSize:   13,
           fontWeight: FontWeight.bold,
-          color: AppTheme.primary,
+          color:      AppTheme.primaryOf(context),
         ),
       ),
     );
@@ -1176,8 +1171,8 @@ class _SeccionLabel extends StatelessWidget {
 enum _TipoAdjunto { imagen, pdf }
 
 class _Adjunto {
-  final String nombre;
-  final Uint8List bytes;
+  final String      nombre;
+  final Uint8List   bytes;
   final _TipoAdjunto tipo;
   _Adjunto({required this.nombre, required this.bytes, required this.tipo});
 }

@@ -41,38 +41,81 @@ class _ColPalette {
   });
 }
 
-const _palettePorHacer = _ColPalette(
-  header: Color(0xFFF1F3F9),
+// ── Paletas modo CLARO ────────────────────────────────────────────────────────
+const _palettePorHacerLight = _ColPalette(
+  header:     Color(0xFFF1F3F9),
   headerText: Color(0xFF374151),
-  badge: Color(0xFF374151),
-  badgeText: Colors.white,
-  body: Color(0xFFF8F9FC),
-  border: Color(0xFFE5E7EB),
+  badge:      Color(0xFF374151),
+  badgeText:  Colors.white,
+  body:       Color(0xFFF8F9FC),
+  border:     Color(0xFFE5E7EB),
   dropBorder: Color(0xFFD1D5DB),
-  dropText: Color(0xFF9CA3AF),
+  dropText:   Color(0xFF9CA3AF),
 );
-
-const _paletteProgreso = _ColPalette(
-  header: Color(0xFFFFF3E0),
+const _paletteProgresoLight = _ColPalette(
+  header:     Color(0xFFFFF3E0),
   headerText: Color(0xFFB45309),
-  badge: Color(0xFFF59E0B),
-  badgeText: Colors.white,
-  body: Color(0xFFFFFBF5),
-  border: Color(0xFFFDE68A),
+  badge:      Color(0xFFF59E0B),
+  badgeText:  Colors.white,
+  body:       Color(0xFFFFFBF5),
+  border:     Color(0xFFFDE68A),
   dropBorder: Color(0xFFFCD34D),
-  dropText: Color(0xFFD97706),
+  dropText:   Color(0xFFD97706),
+);
+const _paletteFinalizadoLight = _ColPalette(
+  header:     Color(0xFFECFDF5),
+  headerText: Color(0xFF065F46),
+  badge:      Color(0xFF10B981),
+  badgeText:  Colors.white,
+  body:       Color(0xFFF6FDFB),
+  border:     Color(0xFFA7F3D0),
+  dropBorder: Color(0xFF6EE7B7),
+  dropText:   Color(0xFF059669),
 );
 
-const _paletteFinalizado = _ColPalette(
-  header: Color(0xFFECFDF5),
-  headerText: Color(0xFF065F46),
-  badge: Color(0xFF10B981),
-  badgeText: Colors.white,
-  body: Color(0xFFF6FDFB),
-  border: Color(0xFFA7F3D0),
-  dropBorder: Color(0xFF6EE7B7),
-  dropText: Color(0xFF059669),
+// ── Paletas modo OSCURO ────────────────────────────────────────────────────────
+const _palettePorHacerDark = _ColPalette(
+  header:     Color(0xFF232638),
+  headerText: Color(0xFFB0B8CC),
+  badge:      Color(0xFF3A3F5C),
+  badgeText:  Color(0xFFB0B8CC),
+  body:       Color(0xFF1A1D2E),
+  border:     Color(0xFF2A2D45),
+  dropBorder: Color(0xFF3A3F5C),
+  dropText:   Color(0xFF6B7280),
 );
+const _paletteProgresoDark = _ColPalette(
+  header:     Color(0xFF2D2410),
+  headerText: Color(0xFFFBBF24),
+  badge:      Color(0xFFF59E0B),
+  badgeText:  Color(0xFF1A1500),
+  body:       Color(0xFF1E1A0F),
+  border:     Color(0xFF3D2E00),
+  dropBorder: Color(0xFFFCD34D),
+  dropText:   Color(0xFFD97706),
+);
+const _paletteFinalizadoDark = _ColPalette(
+  header:     Color(0xFF0D2B1F),
+  headerText: Color(0xFF34D399),
+  badge:      Color(0xFF10B981),
+  badgeText:  Color(0xFF001A10),
+  body:       Color(0xFF0A1E16),
+  border:     Color(0xFF1A4030),
+  dropBorder: Color(0xFF6EE7B7),
+  dropText:   Color(0xFF059669),
+);
+
+// ── Selector de paleta según modo ─────────────────────────────────────────────
+_ColPalette _paletteForEstado(KanbanEstado estado, bool isDark) {
+  switch (estado) {
+    case KanbanEstado.porHacer:
+      return isDark ? _palettePorHacerDark : _palettePorHacerLight;
+    case KanbanEstado.enProgreso:
+      return isDark ? _paletteProgresoDark : _paletteProgresoLight;
+    case KanbanEstado.finalizado:
+      return isDark ? _paletteFinalizadoDark : _paletteFinalizadoLight;
+  }
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // VISTA PRINCIPAL
@@ -87,18 +130,15 @@ class _EnfoqueViewState extends State<EnfoqueView>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late TabController _tabController;
 
-  // Kanban
   List<KanbanTarea> _kanbanTareas = [];
   bool _cargandoTareas = true;
   bool _sesionIniciada = false;
 
-  // Colores de materias desde Firestore  →  { nombreMateria: Color }
   Map<String, Color> _coloresMateria = {};
 
-  // Timer
   static const Map<String, int> _modos = {
-    'Enfoque': 25 * 60,
-    'Descanso corto': 5 * 60,
+    'Enfoque':        25 * 60,
+    'Descanso corto':  5 * 60,
     'Descanso largo': 15 * 60,
   };
   String _modoActual = 'Enfoque';
@@ -107,21 +147,17 @@ class _EnfoqueViewState extends State<EnfoqueView>
   Timer? _timer;
   DateTime? _tiempoInicio;
 
-  // Ciclo Pomodoro
   int _pomodoroCiclo = 0;
   bool _esperandoDescanso = false;
   bool _esperandoEnfoque = false;
   bool _esDescansoLargo = false;
 
-  // Modo Clásico / Libre
   bool _modoClasico = true;
 
-  // Contadores modo clásico
   int _sesionesEnfoque = 0;
   int _sesionesDescansoCorto = 0;
   int _sesionesDescansoLargo = 0;
 
-  // Contadores modo libre
   int _sesionesEnfoqueLibre = 0;
   int _sesionesDescansoCortoLibre = 0;
   int _sesionesDescansoLargoLibre = 0;
@@ -212,7 +248,6 @@ class _EnfoqueViewState extends State<EnfoqueView>
     }
   }
 
-  // ── Cargar colores de materias desde Firestore ────────────────────────────
   Future<void> _cargarColoresMateria() async {
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -247,7 +282,6 @@ class _EnfoqueViewState extends State<EnfoqueView>
   Color _colorDeMateria(String materia) =>
       _coloresMateria[materia] ?? const Color(0xFF94A3B8);
 
-  // ── Cargar tareas ──────────────────────────────────────────────────────────
   Future<void> _cargarTareas() async {
     setState(() => _cargandoTareas = true);
     try {
@@ -262,7 +296,6 @@ class _EnfoqueViewState extends State<EnfoqueView>
     }
   }
 
-  // ── Cargar sesiones desde Firestore ──────────────────────────────────────
   Future<void> _cargarSesiones() async {
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -280,19 +313,13 @@ class _EnfoqueViewState extends State<EnfoqueView>
         final tipo = data['tipo'] as String? ?? 'Enfoque';
         final esLibre = data['modoLibre'] as bool? ?? false;
         if (esLibre) {
-          if (tipo == 'Enfoque')
-            enfoqueL++;
-          else if (tipo == 'Descanso corto')
-            cortoL++;
-          else if (tipo == 'Descanso largo')
-            largoL++;
+          if (tipo == 'Enfoque') enfoqueL++;
+          else if (tipo == 'Descanso corto') cortoL++;
+          else if (tipo == 'Descanso largo') largoL++;
         } else {
-          if (tipo == 'Enfoque')
-            enfoque++;
-          else if (tipo == 'Descanso corto')
-            corto++;
-          else if (tipo == 'Descanso largo')
-            largo++;
+          if (tipo == 'Enfoque') enfoque++;
+          else if (tipo == 'Descanso corto') corto++;
+          else if (tipo == 'Descanso largo') largo++;
         }
       }
       setState(() {
@@ -306,24 +333,18 @@ class _EnfoqueViewState extends State<EnfoqueView>
     } catch (_) {}
   }
 
-  // ── Mover tarea entre columnas ─────────────────────────────────────────────
   void _moverTarea(KanbanTarea kt, KanbanEstado nuevoEstado) async {
     final estadoAnterior = kt.estado;
     setState(() => kt.estado = nuevoEstado);
     if (nuevoEstado == KanbanEstado.finalizado) {
-      try {
-        await TareaService().marcarCompletada(kt.tarea.firestoreId!, true);
-      } catch (_) {}
+      try { await TareaService().marcarCompletada(kt.tarea.firestoreId!, true); } catch (_) {}
     }
     if (estadoAnterior == KanbanEstado.finalizado &&
         nuevoEstado != KanbanEstado.finalizado) {
-      try {
-        await TareaService().marcarCompletada(kt.tarea.firestoreId!, false);
-      } catch (_) {}
+      try { await TareaService().marcarCompletada(kt.tarea.firestoreId!, false); } catch (_) {}
     }
   }
 
-  // ── Getters columnas ───────────────────────────────────────────────────────
   List<KanbanTarea> get _porHacer =>
       _kanbanTareas.where((k) => k.estado == KanbanEstado.porHacer).toList();
   List<KanbanTarea> get _enProgreso =>
@@ -331,7 +352,6 @@ class _EnfoqueViewState extends State<EnfoqueView>
   List<KanbanTarea> get _finalizado =>
       _kanbanTareas.where((k) => k.estado == KanbanEstado.finalizado).toList();
 
-  // ── Timer ──────────────────────────────────────────────────────────────────
   void _iniciarTimer() {
     _tiempoInicio = DateTime.now().subtract(
       Duration(seconds: _modos[_modoActual]! - _segundos),
@@ -363,17 +383,13 @@ class _EnfoqueViewState extends State<EnfoqueView>
         } else {
           setState(() {
             if (_modoClasico) {
-              if (_modoActual == 'Descanso corto')
-                _sesionesDescansoCorto++;
-              else
-                _sesionesDescansoLargo++;
+              if (_modoActual == 'Descanso corto') _sesionesDescansoCorto++;
+              else _sesionesDescansoLargo++;
               _esperandoDescanso = false;
               _esperandoEnfoque = true;
             } else {
-              if (_modoActual == 'Descanso corto')
-                _sesionesDescansoCortoLibre++;
-              else
-                _sesionesDescansoLargoLibre++;
+              if (_modoActual == 'Descanso corto') _sesionesDescansoCortoLibre++;
+              else _sesionesDescansoLargoLibre++;
             }
             _segundos = _modos[_modoActual]!;
             _corriendo = false;
@@ -398,8 +414,7 @@ class _EnfoqueViewState extends State<EnfoqueView>
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) return;
       await FirebaseFirestore.instance
-          .collection('usuarios')
-          .doc(uid)
+          .collection('usuarios').doc(uid)
           .collection('sesiones_pomodoro')
           .add({
             'fecha': DateTime.now().toIso8601String(),
@@ -431,20 +446,13 @@ class _EnfoqueViewState extends State<EnfoqueView>
   void _reiniciar() {
     _timer?.cancel();
     _tiempoInicio = null;
-    setState(() {
-      _segundos = _modos[_modoActual]!;
-      _corriendo = false;
-    });
+    setState(() { _segundos = _modos[_modoActual]!; _corriendo = false; });
   }
 
   void _cambiarModo(String modo) {
     _timer?.cancel();
     _tiempoInicio = null;
-    setState(() {
-      _modoActual = modo;
-      _segundos = _modos[modo]!;
-      _corriendo = false;
-    });
+    setState(() { _modoActual = modo; _segundos = _modos[modo]!; _corriendo = false; });
   }
 
   void _mostrarSnack(String msg) {
@@ -454,7 +462,6 @@ class _EnfoqueViewState extends State<EnfoqueView>
     );
   }
 
-  // ── Resultados del Pomodoro ────────────────────────────────────────────────
   void _mostrarResultados() {
     final enProg = _enProgreso.length;
     final fin = _finalizado.length;
@@ -469,23 +476,19 @@ class _EnfoqueViewState extends State<EnfoqueView>
     late String emoji;
 
     if (pct >= 80) {
-      mensaje =
-          '¡Excelente sesión! Completaste la mayoría de tus tareas. ¡Sigue así!';
+      mensaje = '¡Excelente sesión! Completaste la mayoría de tus tareas. ¡Sigue así!';
       colorMensaje = Colors.green;
       emoji = '🏆';
     } else if (pct >= 50) {
-      mensaje =
-          '¡Buen trabajo! Completaste más de la mitad. En el siguiente Pomodoro puedes mejorar.';
+      mensaje = '¡Buen trabajo! Completaste más de la mitad. En el siguiente Pomodoro puedes mejorar.';
       colorMensaje = Colors.orange;
       emoji = '💪';
     } else if (fin > 0) {
-      mensaje =
-          'Completaste algunas tareas. Intenta enfocarte en menos tareas la próxima sesión.';
+      mensaje = 'Completaste algunas tareas. Intenta enfocarte en menos tareas la próxima sesión.';
       colorMensaje = Colors.orange;
       emoji = '📝';
     } else {
-      mensaje =
-          'Esta vez fue difícil. Recuerda poner menos tareas en "En progreso" la próxima vez.';
+      mensaje = 'Esta vez fue difícil. Recuerda poner menos tareas en "En progreso" la próxima vez.';
       colorMensaje = Colors.red;
       emoji = '💡';
     }
@@ -496,193 +499,184 @@ class _EnfoqueViewState extends State<EnfoqueView>
       enableDrag: false,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (sheetContext) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE5E7EB),
-                borderRadius: BorderRadius.circular(2),
+      builder: (sheetContext) {
+        // ✅ Leemos el tema dentro del builder para que el modal lo herede
+        final colorScheme = Theme.of(context).colorScheme;
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          decoration: BoxDecoration(
+            // ✅ surface del tema en lugar de Colors.white fijo
+            color: colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40, height: 4,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  // ✅ onSurface con opacidad en lugar de Color(0xFFE5E7EB) fijo
+                  color: colorScheme.onSurface.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
-            Text(emoji, style: const TextStyle(fontSize: 48)),
-            const SizedBox(height: 8),
-            const Text(
-              'Avances de la sesión',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF111827),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8F9FC),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _ResultadoItem(
-                    label: 'En progreso',
-                    valor: '$enProg',
-                    color: Colors.orange,
-                    icono: Icons.pending_actions,
-                  ),
-                  Container(
-                    width: 1,
-                    height: 40,
-                    color: const Color(0xFFE5E7EB),
-                  ),
-                  _ResultadoItem(
-                    label: 'Finalizado',
-                    valor: '$fin',
-                    color: Colors.green,
-                    icono: Icons.check_circle,
-                  ),
-                  Container(
-                    width: 1,
-                    height: 40,
-                    color: const Color(0xFFE5E7EB),
-                  ),
-                  _ResultadoItem(
-                    label: 'Productividad',
-                    valor: '$pct%',
-                    color: colorMensaje,
-                    icono: Icons.bar_chart,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: LinearProgressIndicator(
-                value: pct / 100,
-                minHeight: 10,
-                backgroundColor: Colors.grey.shade200,
-                color: colorMensaje,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: colorMensaje.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: colorMensaje.withOpacity(0.25)),
-              ),
-              child: Text(
-                mensaje,
-                textAlign: TextAlign.center,
+              Text(emoji, style: const TextStyle(fontSize: 48)),
+              const SizedBox(height: 8),
+              Text(
+                'Avances de la sesión',
                 style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  // ✅ onSurface del tema en lugar de Color(0xFF111827) fijo
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                decoration: BoxDecoration(
+                  // ✅ onSurface con opacidad en lugar de Color(0xFFF8F9FC) fijo
+                  color: colorScheme.onSurface.withOpacity(0.04),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: colorScheme.onSurface.withOpacity(0.1),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _ResultadoItem(
+                      label: 'En progreso',
+                      valor: '$enProg',
+                      color: Colors.orange,
+                      icono: Icons.pending_actions,
+                    ),
+                    Container(
+                      width: 1, height: 40,
+                      // ✅ divider del tema
+                      color: colorScheme.onSurface.withOpacity(0.1),
+                    ),
+                    _ResultadoItem(
+                      label: 'Finalizado',
+                      valor: '$fin',
+                      color: Colors.green,
+                      icono: Icons.check_circle,
+                    ),
+                    Container(
+                      width: 1, height: 40,
+                      color: colorScheme.onSurface.withOpacity(0.1),
+                    ),
+                    _ResultadoItem(
+                      label: 'Productividad',
+                      valor: '$pct%',
+                      color: colorMensaje,
+                      icono: Icons.bar_chart,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LinearProgressIndicator(
+                  value: pct / 100,
+                  minHeight: 10,
+                  // ✅ onSurface con opacidad en lugar de Colors.grey.shade200
+                  backgroundColor: colorScheme.onSurface.withOpacity(0.1),
                   color: colorMensaje,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
-
-            // Botón Continuar sesión
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: OutlinedButton(
-                onPressed: () {
-                  Navigator.of(sheetContext).pop();
-                },
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppTheme.primary,
-                  side: const BorderSide(color: AppTheme.primary, width: 1.5),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  textStyle: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
+              const SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: colorMensaje.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: colorMensaje.withOpacity(0.25)),
+                ),
+                child: Text(
+                  mensaje,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: colorMensaje,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                child: const Text('Continuar sesión'),
               ),
-            ),
-            const SizedBox(height: 12),
-
-            // Botón Finalizar sesión
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.of(sheetContext).pop();
-                  Future.microtask(() async {
-                    await _guardarSesion(fin, enProg, pct);
-                    if (mounted) {
-                      setState(() {
-                        _pomodoroCiclo = 0;
-                        _esDescansoLargo = false;
-                        _esperandoDescanso = false;
-                        _esperandoEnfoque = false;
-                        _sesionIniciada = false;
-                        _segundos = _modos['Enfoque']!;
-                        _modoActual = 'Enfoque';
-                        _corriendo = false;
-                        _tiempoInicio = null;
-                        for (final kt in _kanbanTareas) {
-                          kt.estado = KanbanEstado.porHacer;
-                        }
-                      });
-                      _timer?.cancel();
-                      _cargarTareas();
-                    }
-                  });
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity, height: 52,
+                child: OutlinedButton(
+                  onPressed: () => Navigator.of(sheetContext).pop(),
+                  style: OutlinedButton.styleFrom(
+                    // ✅ primaryOf(context) en lugar de AppTheme.primary fijo
+                    foregroundColor: AppTheme.primaryOf(context),
+                    side: BorderSide(color: AppTheme.primaryOf(context), width: 1.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
                   ),
-                  textStyle: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                  ),
+                  child: const Text('Continuar sesión'),
                 ),
-                child: const Text('Finalizar sesión'),
               ),
-            ),
-          ],
-        ),
-      ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity, height: 52,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(sheetContext).pop();
+                    Future.microtask(() async {
+                      await _guardarSesion(fin, enProg, pct);
+                      if (mounted) {
+                        setState(() {
+                          _pomodoroCiclo = 0;
+                          _esDescansoLargo = false;
+                          _esperandoDescanso = false;
+                          _esperandoEnfoque = false;
+                          _sesionIniciada = false;
+                          _segundos = _modos['Enfoque']!;
+                          _modoActual = 'Enfoque';
+                          _corriendo = false;
+                          _tiempoInicio = null;
+                          for (final kt in _kanbanTareas) {
+                            kt.estado = KanbanEstado.porHacer;
+                          }
+                        });
+                        _timer?.cancel();
+                        _cargarTareas();
+                      }
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryOf(context),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                  ),
+                  child: const Text('Finalizar sesión'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
-  // ── Guardar sesión ─────────────────────────────────────────────────────────
-  Future<void> _guardarSesion(
-    int finalizadas,
-    int enProgreso,
-    int productividad,
-  ) async {
+  Future<void> _guardarSesion(int finalizadas, int enProgreso, int productividad) async {
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) return;
       await FirebaseFirestore.instance
-          .collection('usuarios')
-          .doc(uid)
+          .collection('usuarios').doc(uid)
           .collection('sesiones_pomodoro')
           .add({
             'fecha': DateTime.now().toIso8601String(),
@@ -696,12 +690,9 @@ class _EnfoqueViewState extends State<EnfoqueView>
     } catch (_) {}
   }
 
-  // ── Reset Kanban ───────────────────────────────────────────────────────────
   void _resetKanban() {
     setState(() {
-      for (final kt in _kanbanTareas) {
-        kt.estado = KanbanEstado.porHacer;
-      }
+      for (final kt in _kanbanTareas) { kt.estado = KanbanEstado.porHacer; }
       _sesionIniciada = false;
       _segundos = _modos[_modoActual]!;
       _corriendo = false;
@@ -718,101 +709,96 @@ class _EnfoqueViewState extends State<EnfoqueView>
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (ctx) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Handle
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 20),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE5E7EB),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-
-            // Título
-            const Text(
-              '¿Cómo funcionan los modos?',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF111827),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Modo Clásico
-            _InfoModoCard(
-              icono: Icons.military_tech_rounded,
-              color: AppTheme.primary,
-              titulo: 'Modo Clásico',
-              descripcion:
-                  'Sigue el ciclo Pomodoro original. Trabaja 25 min, '
-                  'descansa 5 min y cada 4 sesiones toma un descanso largo de 15 min. '
-                  'El sistema te guía en cada paso y no puedes saltar etapas.',
-              items: const [
-                '🍅  25 min de enfoque',
-                '☕  5 min de descanso corto',
-                '🌙  15 min de descanso largo cada 4 pomodoros',
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Modo Libre
-            _InfoModoCard(
-              icono: Icons.tune_rounded,
-              color: AppTheme.accent,
-              titulo: 'Modo Libre',
-              descripcion:
-                  'Tú decides cuándo y cómo descansar. Puedes cambiar '
-                  'entre contadores libremente cuando el timer esté detenido. '
-                  'Ideal si prefieres un ritmo más flexible.',
-              items: const [
-                '🍅  Enfoque cuando quieras',
-                '☕  Descanso corto a tu ritmo',
-                '🌙  Descanso largo cuando lo necesites',
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // Botón cerrar
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+      builder: (ctx) {
+        final colorScheme = Theme.of(context).colorScheme;
+        final primaryColor = AppTheme.primaryOf(context);
+        return Container(
+          decoration: BoxDecoration(
+            // ✅ surface del tema en lugar de Colors.white fijo
+            color: colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    // ✅ onSurface con opacidad
+                    color: colorScheme.onSurface.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                child: const Text(
-                  'Entendido',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+              ),
+              Text(
+                '¿Cómo funcionan los modos?',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  // ✅ onSurface del tema en lugar de Color(0xFF111827) fijo
+                  color: colorScheme.onSurface,
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
+              const SizedBox(height: 20),
+              _InfoModoCard(
+                icono: Icons.military_tech_rounded,
+                color: primaryColor,
+                titulo: 'Modo Clásico',
+                descripcion:
+                    'Sigue el ciclo Pomodoro original. Trabaja 25 min, '
+                    'descansa 5 min y cada 4 sesiones toma un descanso largo de 15 min. '
+                    'El sistema te guía en cada paso y no puedes saltar etapas.',
+                items: const [
+                  '🍅  25 min de enfoque',
+                  '☕  5 min de descanso corto',
+                  '🌙  15 min de descanso largo cada 4 pomodoros',
+                ],
+              ),
+              const SizedBox(height: 16),
+              _InfoModoCard(
+                icono: Icons.tune_rounded,
+                color: AppTheme.accent,
+                titulo: 'Modo Libre',
+                descripcion:
+                    'Tú decides cuándo y cómo descansar. Puedes cambiar '
+                    'entre contadores libremente cuando el timer esté detenido. '
+                    'Ideal si prefieres un ritmo más flexible.',
+                items: const [
+                  '🍅  Enfoque cuando quieras',
+                  '☕  Descanso corto a tu ritmo',
+                  '🌙  Descanso largo cuando lo necesites',
+                ],
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity, height: 50,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryColor,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  child: const Text(
+                    'Entendido',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
   String get _tiempoFormateado {
     final min = _segundos ~/ 60;
     final segs = _segundos % 60;
@@ -821,14 +807,12 @@ class _EnfoqueViewState extends State<EnfoqueView>
 
   double get _progreso => 1 - (_segundos / _modos[_modoActual]!);
 
-  Color get _colorModo {
+  // ✅ _colorModo usa primaryOf(context) — llamado solo dentro de build
+  Color _colorModo(BuildContext context) {
     switch (_modoActual) {
-      case 'Enfoque':
-        return AppTheme.primary;
-      case 'Descanso corto':
-        return AppTheme.accent;
-      default:
-        return AppTheme.secondary;
+      case 'Enfoque':        return AppTheme.primaryOf(context);
+      case 'Descanso corto': return AppTheme.accent;
+      default:               return AppTheme.secondary;
     }
   }
 
@@ -838,14 +822,14 @@ class _EnfoqueViewState extends State<EnfoqueView>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FC),
+      // ✅ Sin backgroundColor hardcodeado — usa scaffoldBackgroundColor del tema
       body: Column(
         children: [
-          _buildHeader(),
+          _buildHeader(context),
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              children: [_buildKanban(), _buildPomodoro()],
+              children: [_buildKanban(context), _buildPomodoro(context)],
             ),
           ),
         ],
@@ -856,14 +840,16 @@ class _EnfoqueViewState extends State<EnfoqueView>
   // ══════════════════════════════════════════════════════════════════════════
   // HEADER
   // ══════════════════════════════════════════════════════════════════════════
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
+    final colorTop = _colorModo(context);
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
       decoration: BoxDecoration(
-        color: _tabController.index == 1 ? _colorModo : AppTheme.primary,
+        // ✅ colorTop ya usa primaryOf(context) en modo Enfoque
+        color: _tabController.index == 1 ? colorTop : AppTheme.primaryOf(context),
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(_tabController.index == 1 ? 0 : 28),
+          bottomLeft:  Radius.circular(_tabController.index == 1 ? 0 : 28),
           bottomRight: Radius.circular(_tabController.index == 1 ? 0 : 28),
         ),
       ),
@@ -901,7 +887,6 @@ class _EnfoqueViewState extends State<EnfoqueView>
                       ),
                     ],
                   ),
-                  // Switch solo en tab Pomodoro
                   if (_tabController.index == 1)
                     Row(
                       children: [
@@ -926,8 +911,7 @@ class _EnfoqueViewState extends State<EnfoqueView>
                           },
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 250),
-                            width: 40,
-                            height: 22,
+                            width: 40, height: 22,
                             decoration: BoxDecoration(
                               color: Colors.white.withOpacity(0.3),
                               borderRadius: BorderRadius.circular(11),
@@ -942,11 +926,8 @@ class _EnfoqueViewState extends State<EnfoqueView>
                                   ? Alignment.centerLeft
                                   : Alignment.centerRight,
                               child: Container(
-                                width: 16,
-                                height: 16,
-                                margin: const EdgeInsets.symmetric(
-                                  horizontal: 3,
-                                ),
+                                width: 16, height: 16,
+                                margin: const EdgeInsets.symmetric(horizontal: 3),
                                 decoration: const BoxDecoration(
                                   color: Colors.white,
                                   shape: BoxShape.circle,
@@ -971,7 +952,6 @@ class _EnfoqueViewState extends State<EnfoqueView>
                 ],
               ),
             ),
-
             const SizedBox(height: 14),
             TabBar(
               controller: _tabController,
@@ -979,23 +959,11 @@ class _EnfoqueViewState extends State<EnfoqueView>
               unselectedLabelColor: Colors.white54,
               indicatorColor: Colors.white,
               indicatorWeight: 2.5,
-              labelStyle: const TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 13,
-              ),
-              unselectedLabelStyle: const TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 13,
-              ),
+              labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
               tabs: const [
-                Tab(
-                  icon: Icon(Icons.view_kanban_outlined, size: 18),
-                  text: 'Kanban',
-                ),
-                Tab(
-                  icon: Icon(Icons.timer_outlined, size: 18),
-                  text: 'Pomodoro',
-                ),
+                Tab(icon: Icon(Icons.view_kanban_outlined, size: 18), text: 'Kanban'),
+                Tab(icon: Icon(Icons.timer_outlined, size: 18), text: 'Pomodoro'),
               ],
             ),
           ],
@@ -1007,7 +975,11 @@ class _EnfoqueViewState extends State<EnfoqueView>
   // ══════════════════════════════════════════════════════════════════════════
   // TAB 1 — KANBAN
   // ══════════════════════════════════════════════════════════════════════════
-  Widget _buildKanban() {
+  Widget _buildKanban(BuildContext context) {
+    final colorScheme  = Theme.of(context).colorScheme;
+    final isDark       = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = AppTheme.primaryOf(context);
+
     if (_cargandoTareas) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -1019,21 +991,23 @@ class _EnfoqueViewState extends State<EnfoqueView>
           children: [
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: const BoxDecoration(
-                color: Color(0xFFEEF4FF),
+              decoration: BoxDecoration(
+                // ✅ primaryOf(context) con opacidad en lugar de Color(0xFFEEF4FF) fijo
+                color: primaryColor.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.check_circle_outline_rounded,
                 size: 48,
-                color: Color(0xFF2C6FED),
+                color: primaryColor,
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'No tienes tareas pendientes',
               style: TextStyle(
-                color: Color(0xFF6B7280),
+                // ✅ onSurface con opacidad en lugar de Color(0xFF6B7280) fijo
+                color: colorScheme.onSurface.withOpacity(0.6),
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),
@@ -1044,8 +1018,9 @@ class _EnfoqueViewState extends State<EnfoqueView>
               icon: const Icon(Icons.refresh_rounded),
               label: const Text('Recargar'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF2C6FED),
-                side: const BorderSide(color: Color(0xFF2C6FED)),
+                // ✅ primaryOf(context) en lugar de Color(0xFF2C6FED) fijo
+                foregroundColor: primaryColor,
+                side: BorderSide(color: primaryColor),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -1063,15 +1038,17 @@ class _EnfoqueViewState extends State<EnfoqueView>
             margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
             decoration: BoxDecoration(
-              color: const Color(0xFFEEF4FF),
+              // ✅ primaryOf(context) con opacidad en lugar de Color(0xFFEEF4FF) fijo
+              color: primaryColor.withOpacity(0.08),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFB8D0FB)),
+              border: Border.all(color: primaryColor.withOpacity(0.3)),
             ),
             child: Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.info_outline_rounded,
-                  color: Color(0xFF2C6FED),
+                  // ✅ primaryOf(context) en lugar de Color(0xFF2C6FED) fijo
+                  color: primaryColor,
                   size: 16,
                 ),
                 const SizedBox(width: 8),
@@ -1080,7 +1057,8 @@ class _EnfoqueViewState extends State<EnfoqueView>
                     'Mueve tareas a "En progreso" e inicia el Pomodoro.',
                     style: TextStyle(
                       fontSize: 12,
-                      color: const Color(0xFF1E50C8),
+                      // ✅ primaryOf(context) con ligera variación en lugar de Color(0xFF1E50C8)
+                      color: primaryColor,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -1097,7 +1075,7 @@ class _EnfoqueViewState extends State<EnfoqueView>
                 _KanbanColumna(
                   titulo: 'Por hacer',
                   icono: Icons.radio_button_unchecked_rounded,
-                  palette: _palettePorHacer,
+                  palette: _paletteForEstado(KanbanEstado.porHacer, isDark),
                   tareas: _porHacer,
                   estado: KanbanEstado.porHacer,
                   colorDeMateria: _colorDeMateria,
@@ -1106,7 +1084,7 @@ class _EnfoqueViewState extends State<EnfoqueView>
                 _KanbanColumna(
                   titulo: 'En progreso',
                   icono: Icons.play_circle_outline_rounded,
-                  palette: _paletteProgreso,
+                  palette: _paletteForEstado(KanbanEstado.enProgreso, isDark),
                   tareas: _enProgreso,
                   estado: KanbanEstado.enProgreso,
                   colorDeMateria: _colorDeMateria,
@@ -1115,7 +1093,7 @@ class _EnfoqueViewState extends State<EnfoqueView>
                 _KanbanColumna(
                   titulo: 'Listo',
                   icono: Icons.check_circle_outline_rounded,
-                  palette: _paletteFinalizado,
+                  palette: _paletteForEstado(KanbanEstado.finalizado, isDark),
                   tareas: _finalizado,
                   estado: KanbanEstado.finalizado,
                   colorDeMateria: _colorDeMateria,
@@ -1131,21 +1109,16 @@ class _EnfoqueViewState extends State<EnfoqueView>
             child: ElevatedButton.icon(
               onPressed: () => _tabController.animateTo(1),
               icon: const Icon(Icons.play_arrow_rounded),
-              label: Text(
-                'Iniciar Pomodoro con ${_enProgreso.length} tarea(s)',
-              ),
+              label: Text('Iniciar Pomodoro con ${_enProgreso.length} tarea(s)'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primary,
+                backgroundColor: primaryColor,
                 foregroundColor: Colors.white,
                 minimumSize: const Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(28),
                 ),
                 elevation: 0,
-                textStyle: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14,
-                ),
+                textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
               ),
             ),
           ),
@@ -1156,10 +1129,11 @@ class _EnfoqueViewState extends State<EnfoqueView>
   // ══════════════════════════════════════════════════════════════════════════
   // TAB 2 — POMODORO
   // ══════════════════════════════════════════════════════════════════════════
-  Widget _buildPomodoro() {
-    final colorTop = _colorModo;
+  Widget _buildPomodoro(BuildContext context) {
+    final colorScheme  = Theme.of(context).colorScheme;
+    final primaryColor = AppTheme.primaryOf(context);
+    final colorTop     = _colorModo(context);
 
-    // Condiciones de bloqueo para modo clásico
     final selectorBloqueado = _modoClasico
         ? (_pomodoroCiclo > 0 ||
               _esperandoDescanso ||
@@ -1179,7 +1153,7 @@ class _EnfoqueViewState extends State<EnfoqueView>
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
           child: Column(
             children: [
-              // ── Selector de modo ────────────────────────────────────────
+              // ── Selector de modo ──────────────────────────────────────
               AnimatedOpacity(
                 duration: const Duration(milliseconds: 300),
                 opacity: selectorOpacity,
@@ -1196,16 +1170,12 @@ class _EnfoqueViewState extends State<EnfoqueView>
                         final seleccionado = _modoActual == modo;
                         return Expanded(
                           child: GestureDetector(
-                            onTap: () {
-                              if (!_corriendo) _cambiarModo(modo);
-                            },
+                            onTap: () { if (!_corriendo) _cambiarModo(modo); },
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 220),
                               padding: const EdgeInsets.symmetric(vertical: 8),
                               decoration: BoxDecoration(
-                                color: seleccionado
-                                    ? Colors.white
-                                    : Colors.transparent,
+                                color: seleccionado ? Colors.white : Colors.transparent,
                                 borderRadius: BorderRadius.circular(26),
                               ),
                               child: Text(
@@ -1229,20 +1199,19 @@ class _EnfoqueViewState extends State<EnfoqueView>
               ),
               const SizedBox(height: 28),
 
-              // ── Círculo timer ───────────────────────────────────────────
+              // ── Círculo timer ─────────────────────────────────────────
               Center(
                 child: SizedBox(
-                  width: 220,
-                  height: 220,
+                  width: 220, height: 220,
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
                       Container(
-                        width: 220,
-                        height: 220,
+                        width: 220, height: 220,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.white,
+                          // ✅ surface del tema en lugar de Colors.white fijo
+                          color: colorScheme.surface,
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.18),
@@ -1254,8 +1223,7 @@ class _EnfoqueViewState extends State<EnfoqueView>
                         ),
                       ),
                       SizedBox(
-                        width: 200,
-                        height: 200,
+                        width: 200, height: 200,
                         child: CircularProgressIndicator(
                           value: _progreso,
                           strokeWidth: 10,
@@ -1269,10 +1237,11 @@ class _EnfoqueViewState extends State<EnfoqueView>
                         children: [
                           Text(
                             _tiempoFormateado,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 52,
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF1A1D2E),
+                              // ✅ onSurface del tema en lugar de Color(0xFF1A1D2E) fijo
+                              color: colorScheme.onSurface,
                               letterSpacing: -2,
                             ),
                           ),
@@ -1281,25 +1250,24 @@ class _EnfoqueViewState extends State<EnfoqueView>
                             _modoClasico
                                 ? '$_sesionesEnfoque 🍅  $_sesionesDescansoCorto ☕  $_sesionesDescansoLargo 🌙'
                                 : '$_sesionesEnfoqueLibre 🍅  $_sesionesDescansoCortoLibre ☕  $_sesionesDescansoLargoLibre 🌙',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF6B7280),
+                              // ✅ onSurface con opacidad en lugar de Color(0xFF6B7280) fijo
+                              color: colorScheme.onSurface.withOpacity(0.5),
                             ),
                           ),
                         ],
                       ),
-                      // Botón info
                       Positioned(
-                        right: 0,
-                        bottom: 8,
+                        right: 0, bottom: 8,
                         child: GestureDetector(
                           onTap: _mostrarInfoModos,
                           child: Container(
-                            width: 30,
-                            height: 30,
+                            width: 30, height: 30,
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              // ✅ surface del tema
+                              color: colorScheme.surface,
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
@@ -1326,7 +1294,7 @@ class _EnfoqueViewState extends State<EnfoqueView>
           ),
         ),
 
-        // ── Mitad inferior blanca ─────────────────────────────────────────
+        // ── Mitad inferior ────────────────────────────────────────────────
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
@@ -1340,9 +1308,7 @@ class _EnfoqueViewState extends State<EnfoqueView>
                     decoration: BoxDecoration(
                       color: Colors.orange.withOpacity(0.08),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.orange.withOpacity(0.25),
-                      ),
+                      border: Border.all(color: Colors.orange.withOpacity(0.25)),
                     ),
                     child: Text(
                       _esDescansoLargo
@@ -1358,22 +1324,14 @@ class _EnfoqueViewState extends State<EnfoqueView>
                   ),
                   const SizedBox(height: 12),
                   _FocusifyBtn(
-                    label: _esDescansoLargo
-                        ? 'Ir a descanso largo'
-                        : 'Ir a descanso corto',
-                    icon: _esDescansoLargo
-                        ? Icons.nightlight_round
-                        : Icons.coffee_rounded,
+                    label: _esDescansoLargo ? 'Ir a descanso largo' : 'Ir a descanso corto',
+                    icon: _esDescansoLargo ? Icons.nightlight_round : Icons.coffee_rounded,
                     color: Colors.orange,
                     filled: true,
                     onTap: () {
                       setState(() {
                         _esperandoDescanso = false;
-                        _cambiarModo(
-                          _esDescansoLargo
-                              ? 'Descanso largo'
-                              : 'Descanso corto',
-                        );
+                        _cambiarModo(_esDescansoLargo ? 'Descanso largo' : 'Descanso corto');
                       });
                     },
                   ),
@@ -1382,17 +1340,16 @@ class _EnfoqueViewState extends State<EnfoqueView>
                     width: double.infinity,
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: AppTheme.primary.withOpacity(0.08),
+                      // ✅ primaryOf(context) en lugar de AppTheme.primary fijo
+                      color: primaryColor.withOpacity(0.08),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppTheme.primary.withOpacity(0.25),
-                      ),
+                      border: Border.all(color: primaryColor.withOpacity(0.25)),
                     ),
-                    child: const Text(
+                    child: Text(
                       '¡Descansaste bien! Vuelve al modo enfoque 🍅',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: AppTheme.primary,
+                        color: primaryColor,
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
                       ),
@@ -1402,7 +1359,7 @@ class _EnfoqueViewState extends State<EnfoqueView>
                   _FocusifyBtn(
                     label: 'Volver a enfocarse',
                     icon: Icons.play_arrow_rounded,
-                    color: AppTheme.primary,
+                    color: primaryColor,
                     filled: true,
                     onTap: () {
                       setState(() {
@@ -1460,40 +1417,32 @@ class _EnfoqueViewState extends State<EnfoqueView>
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8F9FC),
+                    // ✅ onSurface con opacidad en lugar de Color(0xFFF8F9FC) fijo
+                    color: colorScheme.onSurface.withOpacity(0.04),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                    border: Border.all(
+                      color: colorScheme.onSurface.withOpacity(0.1),
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Sesión actual',
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 13,
-                          color: Color(0xFF374151),
+                          // ✅ onSurface del tema en lugar de Color(0xFF374151) fijo
+                          color: colorScheme.onSurface.withOpacity(0.8),
                         ),
                       ),
                       const SizedBox(height: 12),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          _MiniStat(
-                            'En progreso',
-                            '${_enProgreso.length}',
-                            Colors.orange,
-                          ),
-                          _MiniStat(
-                            'Finalizadas',
-                            '${_finalizado.length}',
-                            Colors.green,
-                          ),
-                          _MiniStat(
-                            'Por hacer',
-                            '${_porHacer.length}',
-                            Colors.grey,
-                          ),
+                          _MiniStat('En progreso', '${_enProgreso.length}', Colors.orange),
+                          _MiniStat('Finalizadas',  '${_finalizado.length}', Colors.green),
+                          _MiniStat('Por hacer',    '${_porHacer.length}',   colorScheme.onSurface.withOpacity(0.4)),
                         ],
                       ),
                     ],
@@ -1501,7 +1450,6 @@ class _EnfoqueViewState extends State<EnfoqueView>
                 ),
                 const SizedBox(height: 12),
 
-                // ── Ver avances ───────────────────────────────────────────
                 if (_finalizado.isNotEmpty)
                   OutlinedButton.icon(
                     onPressed: _mostrarResultados,
@@ -1569,10 +1517,7 @@ class _KanbanColumna extends StatelessWidget {
             child: Column(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 9,
-                    horizontal: 8,
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 8),
                   decoration: BoxDecoration(
                     color: palette.header,
                     borderRadius: const BorderRadius.vertical(
@@ -1598,10 +1543,7 @@ class _KanbanColumna extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: palette.badge,
                           borderRadius: BorderRadius.circular(10),
@@ -1626,9 +1568,7 @@ class _KanbanColumna extends StatelessWidget {
                           itemCount: tareas.length,
                           itemBuilder: (context, i) => _KanbanCard(
                             kt: tareas[i],
-                            materiaColor: colorDeMateria(
-                              tareas[i].tarea.materia,
-                            ),
+                            materiaColor: colorDeMateria(tareas[i].tarea.materia),
                           ),
                         ),
                 ),
@@ -1704,45 +1644,60 @@ class _KanbanCard extends StatelessWidget {
           width: 120,
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.white,
+            // ✅ surface del tema en lugar de Colors.white fijo
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: materiaColor, width: 2),
           ),
           child: Text(
             kt.tarea.titulo,
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
             overflow: TextOverflow.ellipsis,
             maxLines: 2,
           ),
         ),
       ),
-      childWhenDragging: Opacity(opacity: 0.3, child: _buildCard()),
-      child: _buildCard(),
+      childWhenDragging: Opacity(opacity: 0.3, child: _buildCard(context)),
+      child: _buildCard(context),
     );
   }
 
-  Widget _buildCard() {
+  Widget _buildCard(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        // ✅ surface del tema en lugar de Colors.white fijo
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: materiaColor.withOpacity(0.4)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             kt.tarea.titulo,
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              // ✅ onSurface del tema
+              color: colorScheme.onSurface,
+            ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -1750,8 +1705,7 @@ class _KanbanCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 6,
-                height: 6,
+                width: 6, height: 6,
                 decoration: BoxDecoration(
                   color: AppTheme.colorPrioridad(kt.tarea.prioridad),
                   shape: BoxShape.circle,
@@ -1761,7 +1715,11 @@ class _KanbanCard extends StatelessWidget {
               Flexible(
                 child: Text(
                   kt.tarea.materia,
-                  style: TextStyle(fontSize: 9, color: Colors.grey.shade600),
+                  style: TextStyle(
+                    fontSize: 9,
+                    // ✅ onSurface con opacidad en lugar de Colors.grey.shade600 fijo
+                    color: colorScheme.onSurface.withOpacity(0.5),
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -1794,8 +1752,7 @@ class _FocusifyBtn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: double.infinity,
-      height: 50,
+      width: double.infinity, height: 50,
       child: filled
           ? ElevatedButton.icon(
               onPressed: onTap,
@@ -1808,10 +1765,7 @@ class _FocusifyBtn extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),
-                textStyle: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
-                ),
+                textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
               ),
             )
           : OutlinedButton.icon(
@@ -1824,10 +1778,7 @@ class _FocusifyBtn extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),
-                textStyle: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
-                ),
+                textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
               ),
             ),
     );
@@ -1922,19 +1873,23 @@ class _ResultadoItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       children: [
         Icon(icono, color: color, size: 28),
         const SizedBox(height: 4),
         Text(
           valor,
+          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color),
+        ),
+        Text(
+          label,
           style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: color,
+            fontSize: 10,
+            // ✅ onSurface con opacidad en lugar de Colors.grey fijo
+            color: colorScheme.onSurface.withOpacity(0.5),
           ),
         ),
-        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
       ],
     );
   }
@@ -1957,6 +1912,7 @@ class _InfoModoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1981,9 +1937,7 @@ class _InfoModoCard extends StatelessWidget {
               Text(
                 titulo,
                 style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: color,
+                  fontSize: 15, fontWeight: FontWeight.w800, color: color,
                 ),
               ),
             ],
@@ -1991,9 +1945,10 @@ class _InfoModoCard extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             descripcion,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
-              color: Color(0xFF6B7280),
+              // ✅ onSurface con opacidad en lugar de Color(0xFF6B7280) fijo
+              color: colorScheme.onSurface.withOpacity(0.6),
               height: 1.5,
             ),
           ),
@@ -2003,10 +1958,11 @@ class _InfoModoCard extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 4),
               child: Text(
                 item,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF374151),
+                  // ✅ onSurface del tema en lugar de Color(0xFF374151) fijo
+                  color: colorScheme.onSurface.withOpacity(0.8),
                 ),
               ),
             ),
@@ -2025,17 +1981,21 @@ class _MiniStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       children: [
         Text(
           valor,
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color),
+        ),
+        Text(
+          label,
           style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: color,
+            fontSize: 10,
+            // ✅ onSurface con opacidad en lugar de Colors.grey fijo
+            color: colorScheme.onSurface.withOpacity(0.5),
           ),
         ),
-        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
       ],
     );
   }

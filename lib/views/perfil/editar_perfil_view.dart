@@ -151,8 +151,9 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setS) => AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Text('Confirmar cambio de correo'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -169,9 +170,11 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
                   labelText: 'Contraseña actual',
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
-                    icon: Icon(oculta
-                        ? Icons.visibility_outlined
-                        : Icons.visibility_off_outlined),
+                    icon: Icon(
+                      oculta
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                    ),
                     onPressed: () => setS(() => oculta = !oculta),
                   ),
                 ),
@@ -185,7 +188,7 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primary,
+                backgroundColor: AppTheme.primaryOf(context),
                 foregroundColor: Colors.white,
               ),
               onPressed: () => Navigator.pop(ctx, controller.text),
@@ -233,7 +236,8 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
           context: context,
           builder: (_) => AlertDialog(
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16)),
+              borderRadius: BorderRadius.circular(16),
+            ),
             title: const Text('Verifica tu nuevo correo'),
             content: Text(
               'Enviamos un enlace de verificación a $emailNuevo. '
@@ -327,246 +331,324 @@ class _EditarPerfilViewState extends State<EditarPerfilView> {
     final tieneFotoRed = _fotoUrlActual != null && _fotoUrlActual!.isNotEmpty;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Editar Perfil')),
       body: _cargando
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // ── Avatar con preview local ──────────────────────
-                    Center(
-                      child: Column(
+          : Form(
+              key: _formKey,
+              child: CustomScrollView(
+                slivers: [
+                  // ── Header ──────────────────────────────────────────────
+                  SliverToBoxAdapter(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryOf(context),
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(32),
+                          bottomRight: Radius.circular(32),
+                        ),
+                      ),
+                      padding: EdgeInsets.only(
+                        top: MediaQuery.of(context).padding.top + 16,
+                        bottom: 28,
+                        left: 20,
+                        right: 20,
+                      ),
+                      child: Row(
                         children: [
-                          GestureDetector(
-                            onTap: _seleccionarFoto,
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                CircleAvatar(
-                                  radius: 44,
-                                  backgroundColor: AppTheme.primary,
-                                  backgroundImage: _fotoBytes != null
-                                      ? MemoryImage(_fotoBytes!)
-                                      : tieneFotoRed
-                                          ? NetworkImage(_fotoUrlActual!)
-                                              as ImageProvider
-                                          : null,
-                                  child: (_fotoBytes == null && !tieneFotoRed)
-                                      ? Text(
-                                          _nombre.text.isNotEmpty
-                                              ? _nombre.text[0].toUpperCase()
-                                              : 'U',
-                                          style: const TextStyle(
-                                            fontSize: 34,
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        )
-                                      : null,
-                                ),
-                                Positioned(
-                                  bottom: 0,
-                                  right: 0,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(5),
-                                    decoration: const BoxDecoration(
-                                      color: Colors.white,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      Icons.camera_alt_rounded,
-                                      size: 16,
-                                      color: AppTheme.primary,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                          IconButton(
+                            icon: const Icon(
+                              Icons.arrow_back_rounded,
+                              color: Colors.white,
+                            ),
+                            onPressed: () => context.pop(),
+                          ),
+                          const Expanded(
+                            child: Text(
+                              'Editar Perfil',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 6),
-                          // Si hay foto nueva en preview, mostrar opción de descartarla
-                          if (_fotoModificada)
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.info_outline,
-                                    size: 13, color: AppTheme.primary),
-                                const SizedBox(width: 4),
-                                const Text(
-                                  'Nueva foto (preview)',
-                                  style: TextStyle(
-                                      fontSize: 12, color: AppTheme.primary),
-                                ),
-                                const SizedBox(width: 8),
-                                GestureDetector(
-                                  onTap: _descartarFoto,
-                                  child: Text(
-                                    'Descartar',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: AppTheme.danger,
-                                      decoration: TextDecoration.underline,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            )
-                          else
-                            Text(
-                              'Toca para cambiar foto',
-                              style: TextStyle(
-                                  fontSize: 12, color: Colors.grey.shade500),
-                            ),
+                          const SizedBox(width: 48),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 24),
+                  ),
 
-                    // ── Información personal ──────────────────────────
-                    _Seccion(titulo: 'Información personal'),
-                    TextFormField(
-                      controller: _nombre,
-                      decoration: const InputDecoration(
-                        labelText: 'Nombre completo *',
-                        prefixIcon: Icon(Icons.person_outline),
-                      ),
-                      validator: (v) =>
-                          v == null || v.isEmpty ? 'Campo requerido' : null,
-                    ),
-                    const SizedBox(height: 12),
-
-                    TextFormField(
-                      controller: _email,
-                      decoration: InputDecoration(
-                        labelText: 'Correo electrónico *',
-                        prefixIcon: const Icon(Icons.email_outlined),
-                        errorText: _errorEmail,
-                        errorStyle: const TextStyle(fontSize: 13),
-                      ),
-                      keyboardType: TextInputType.emailAddress,
-                      onChanged: (_) {
-                        if (_errorEmail != null) {
-                          setState(() => _errorEmail = null);
-                        }
-                      },
-                      validator: (v) =>
-                          v == null || v.isEmpty ? 'Campo requerido' : null,
-                    ),
-                    const SizedBox(height: 12),
-
-                    TextFormField(
-                      controller: _telefono,
-                      decoration: const InputDecoration(
-                        labelText: 'Teléfono',
-                        prefixIcon: Icon(Icons.phone_outlined),
-                      ),
-                      keyboardType: TextInputType.phone,
-                    ),
-                    const SizedBox(height: 20),
-
-                    // ── Información académica ─────────────────────────
-                    _Seccion(titulo: 'Información académica'),
-                    TextFormField(
-                      controller: _carrera,
-                      decoration: const InputDecoration(
-                        labelText: 'Carrera',
-                        prefixIcon: Icon(Icons.school_outlined),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _semestre,
-                      decoration: const InputDecoration(
-                        labelText: 'Semestre',
-                        prefixIcon: Icon(Icons.numbers_outlined),
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
-                    const SizedBox(height: 12),
-                    _cargandoUnis
-                        ? const Center(child: CircularProgressIndicator())
-                        : _universidades.isEmpty
-                            ? TextFormField(
-                                controller: _universidad,
-                                decoration: const InputDecoration(
-                                  labelText: 'Universidad',
-                                  prefixIcon:
-                                      Icon(Icons.account_balance_outlined),
-                                  hintText:
-                                      'No hay universidades registradas aún',
-                                ),
-                              )
-                            : DropdownButtonFormField<String>(
-                                value: _universidad.text.isEmpty
-                                    ? null
-                                    : _universidades.any(
-                                            (u) =>
-                                                u.nombre == _universidad.text)
-                                        ? _universidad.text
-                                        : null,
-                                decoration: const InputDecoration(
-                                  labelText: 'Universidad',
-                                  prefixIcon:
-                                      Icon(Icons.account_balance_outlined),
-                                ),
-                                hint: const Text('Selecciona tu universidad'),
-                                items: _universidades
-                                    .map(
-                                      (u) => DropdownMenuItem(
-                                        value: u.nombre,
-                                        child: Text(u.nombre,
-                                            overflow: TextOverflow.ellipsis),
+                  // ── Contenido ────────────────────────────────────────────
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // ── Avatar con preview local ──────────────────────
+                          Center(
+                            child: Column(
+                              children: [
+                                GestureDetector(
+                                  onTap: _seleccionarFoto,
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 44,
+                                        backgroundColor: AppTheme.primaryOf(
+                                          context,
+                                        ),
+                                        backgroundImage: _fotoBytes != null
+                                            ? MemoryImage(_fotoBytes!)
+                                            : tieneFotoRed
+                                            ? NetworkImage(_fotoUrlActual!)
+                                                  as ImageProvider
+                                            : null,
+                                        child:
+                                            (_fotoBytes == null &&
+                                                !tieneFotoRed)
+                                            ? Text(
+                                                _nombre.text.isNotEmpty
+                                                    ? _nombre.text[0]
+                                                          .toUpperCase()
+                                                    : 'U',
+                                                style: const TextStyle(
+                                                  fontSize: 34,
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              )
+                                            : null,
                                       ),
-                                    )
-                                    .toList(),
-                                onChanged: (v) =>
-                                    setState(() => _universidad.text = v ?? ''),
+                                      Positioned(
+                                        bottom: 0,
+                                        right: 0,
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.surface,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Icon(
+                                            Icons.camera_alt_rounded,
+                                            size: 16,
+                                            color: AppTheme.primaryOf(context),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                // Si hay foto nueva en preview, mostrar opción de descartarla
+                                if (_fotoModificada)
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.info_outline,
+                                        size: 13,
+                                        color: AppTheme.primaryOf(context),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Nueva foto (preview)',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: AppTheme.primaryOf(context),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      GestureDetector(
+                                        onTap: _descartarFoto,
+                                        child: Text(
+                                          'Descartar',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: AppTheme.danger,
+                                            decoration:
+                                                TextDecoration.underline,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                else
+                                  Text(
+                                    'Toca para cambiar foto',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade500,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          // ── Información personal ──────────────────────────
+                          _Seccion(titulo: 'Información personal'),
+                          TextFormField(
+                            controller: _nombre,
+                            decoration: const InputDecoration(
+                              labelText: 'Nombre completo *',
+                              prefixIcon: Icon(Icons.person_outline),
+                            ),
+                            validator: (v) => v == null || v.isEmpty
+                                ? 'Campo requerido'
+                                : null,
+                          ),
+                          const SizedBox(height: 12),
+
+                          TextFormField(
+                            controller: _email,
+                            decoration: InputDecoration(
+                              labelText: 'Correo electrónico *',
+                              prefixIcon: const Icon(Icons.email_outlined),
+                              errorText: _errorEmail,
+                              errorStyle: const TextStyle(fontSize: 13),
+                            ),
+                            keyboardType: TextInputType.emailAddress,
+                            onChanged: (_) {
+                              if (_errorEmail != null) {
+                                setState(() => _errorEmail = null);
+                              }
+                            },
+                            validator: (v) => v == null || v.isEmpty
+                                ? 'Campo requerido'
+                                : null,
+                          ),
+                          const SizedBox(height: 12),
+
+                          TextFormField(
+                            controller: _telefono,
+                            decoration: const InputDecoration(
+                              labelText: 'Teléfono',
+                              prefixIcon: Icon(Icons.phone_outlined),
+                            ),
+                            keyboardType: TextInputType.phone,
+                          ),
+                          const SizedBox(height: 20),
+
+                          // ── Información académica ─────────────────────────
+                          _Seccion(titulo: 'Información académica'),
+                          TextFormField(
+                            controller: _carrera,
+                            decoration: const InputDecoration(
+                              labelText: 'Carrera',
+                              prefixIcon: Icon(Icons.school_outlined),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: _semestre,
+                            decoration: const InputDecoration(
+                              labelText: 'Semestre',
+                              prefixIcon: Icon(Icons.numbers_outlined),
+                            ),
+                            keyboardType: TextInputType.number,
+                          ),
+                          const SizedBox(height: 12),
+                          _cargandoUnis
+                              ? const Center(child: CircularProgressIndicator())
+                              : _universidades.isEmpty
+                              ? TextFormField(
+                                  controller: _universidad,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Universidad',
+                                    prefixIcon: Icon(
+                                      Icons.account_balance_outlined,
+                                    ),
+                                    hintText:
+                                        'No hay universidades registradas aún',
+                                  ),
+                                )
+                              : DropdownButtonFormField<String>(
+                                  value: _universidad.text.isEmpty
+                                      ? null
+                                      : _universidades.any(
+                                          (u) => u.nombre == _universidad.text,
+                                        )
+                                      ? _universidad.text
+                                      : null,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Universidad',
+                                    prefixIcon: Icon(
+                                      Icons.account_balance_outlined,
+                                    ),
+                                  ),
+                                  hint: const Text('Selecciona tu universidad'),
+                                  items: _universidades
+                                      .map(
+                                        (u) => DropdownMenuItem(
+                                          value: u.nombre,
+                                          child: Text(
+                                            u.nombre,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      )
+                                      .toList(),
+                                  onChanged: (v) => setState(
+                                    () => _universidad.text = v ?? '',
+                                  ),
+                                ),
+                          const SizedBox(height: 28),
+
+                          // ── Botones guardar / cancelar ────────────────────
+                          ElevatedButton.icon(
+                            onPressed: _guardando ? null : _guardar,
+                            icon: _guardando
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Icon(Icons.save_outlined),
+                            label: Text(
+                              _guardando ? 'Guardando...' : 'Guardar cambios',
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryOf(context),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
                               ),
-                    const SizedBox(height: 28),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
 
-                    // ── Botones guardar / cancelar ────────────────────
-                    ElevatedButton.icon(
-                      onPressed: _guardando ? null : _guardar,
-                      icon: _guardando
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.white),
-                            )
-                          : const Icon(Icons.save_outlined),
-                      label:
-                          Text(_guardando ? 'Guardando...' : 'Guardar cambios'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30)),
+                          // ✅ Botón cancelar — descarta todo y regresa
+                          OutlinedButton.icon(
+                            onPressed: _guardando ? null : () => context.pop(),
+                            icon: const Icon(Icons.close_rounded),
+                            label: const Text('Cancelar'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Theme.of(
+                                context,
+                              ).colorScheme.onSurface,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              side: BorderSide(
+                                color: Theme.of(context).dividerColor,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 10),
-
-                    // ✅ Botón cancelar — descarta todo y regresa
-                    OutlinedButton.icon(
-                      onPressed: _guardando ? null : () => context.pop(),
-                      icon: const Icon(Icons.close_rounded),
-                      label: const Text('Cancelar'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF1A1A2E),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30)),
-                        side: BorderSide(color: Colors.grey.shade300),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
     );
@@ -583,10 +665,10 @@ class _Seccion extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
         titulo,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.bold,
-          color: AppTheme.primary,
+          color: AppTheme.primaryOf(context),
         ),
       ),
     );

@@ -1,3 +1,5 @@
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../main.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/usuario_model.dart';
@@ -64,7 +66,6 @@ class _PerfilViewState extends State<PerfilView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FA),
       body: _cargando
           ? const Center(child: CircularProgressIndicator())
           : _usuario == null
@@ -128,6 +129,13 @@ class _PerfilViewState extends State<PerfilView> {
                           _SectionCard(
                             children: [
                               _OptionTile(
+                                icon: Icons.palette_outlined,
+                                iconColor: AppTheme.primary,
+                                title: 'Apariencia',
+                                onTap: _cambiarTema,
+                              ),
+                              _Divider(),
+                              _OptionTile(
                                 icon: Icons.lock_outline_rounded,
                                 iconColor: AppTheme.primary,
                                 title: 'Cambiar contraseña',
@@ -153,6 +161,56 @@ class _PerfilViewState extends State<PerfilView> {
             ),
     );
   }
+
+  void _cambiarTema() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 36),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 24),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const Text(
+              'Apariencia',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
+            _OpcionTema(
+              icono: Icons.brightness_auto_rounded,
+              label: 'Automático (sistema)',
+              modo: ThemeMode.system,
+            ),
+            const SizedBox(height: 10),
+            _OpcionTema(
+              icono: Icons.light_mode_rounded,
+              label: 'Modo claro',
+              modo: ThemeMode.light,
+            ),
+            const SizedBox(height: 10),
+            _OpcionTema(
+              icono: Icons.dark_mode_rounded,
+              label: 'Modo oscuro',
+              modo: ThemeMode.dark,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // ── Header ────────────────────────────────────────────────────────────────────
@@ -168,7 +226,7 @@ class _Header extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: AppTheme.primary,
+        color: AppTheme.primaryOf(context),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(32),
           bottomRight: Radius.circular(32),
@@ -292,17 +350,21 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1A1D2E) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: isDark ? Border.all(color: const Color(0xFF2A2D45)) : null,
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: Column(children: children),
     );
@@ -356,16 +418,19 @@ class _OptionTile extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
-                      color: titleColor ?? const Color(0xFF1A1A2E),
+                      color:
+                          titleColor ?? Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   if (subtitle != null) ...[
                     const SizedBox(height: 2),
                     Text(
                       subtitle!,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF8A8A9A),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.55),
                       ),
                     ),
                   ],
@@ -388,11 +453,91 @@ class _OptionTile extends StatelessWidget {
 class _Divider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return const Divider(
+    return Divider(
       height: 1,
       indent: 70,
       endIndent: 16,
-      color: const Color(0xFFF0F0F0),
+      color: Theme.of(context).dividerColor,
+    );
+  }
+}
+
+class _OpcionTema extends StatelessWidget {
+  final IconData icono;
+  final String label;
+  final ThemeMode modo;
+
+  const _OpcionTema({
+    required this.icono,
+    required this.label,
+    required this.modo,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = AppTheme.primaryOf(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: themeModeNotifier,
+      builder: (_, modoActual, __) {
+        final seleccionado = modoActual == modo;
+        return GestureDetector(
+          onTap: () async {
+            themeModeNotifier.value = modo;
+            final prefs = await SharedPreferences.getInstance();
+            final key = modo == ThemeMode.dark
+                ? 'dark'
+                : modo == ThemeMode.light
+                ? 'light'
+                : 'system';
+            await prefs.setString('theme_mode', key);
+            if (context.mounted) Navigator.pop(context);
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: seleccionado
+                  ? primary.withOpacity(0.08)
+                  : isDark
+                  ? const Color(0xFF242840)
+                  : Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: seleccionado ? primary : Theme.of(context).dividerColor,
+                width: seleccionado ? 1.5 : 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  icono,
+                  color: seleccionado ? primary : Colors.grey,
+                  size: 22,
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: seleccionado
+                          ? FontWeight.w600
+                          : FontWeight.w400,
+                      color: seleccionado
+                          ? primary
+                          : Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+                if (seleccionado)
+                  Icon(Icons.check_circle_rounded, color: primary, size: 20),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
