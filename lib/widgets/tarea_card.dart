@@ -16,20 +16,24 @@ class TareaCard extends StatelessWidget {
 
   String _formatFecha(DateTime fecha) {
     final ahora = DateTime.now();
-    final hoy   = DateTime(ahora.year, ahora.month, ahora.day);
-    final dia   = DateTime(fecha.year, fecha.month, fecha.day);
-    final diff  = dia.difference(hoy).inDays;
+    final hoy = DateTime(ahora.year, ahora.month, ahora.day);
+    final dia = DateTime(fecha.year, fecha.month, fecha.day);
+    final diff = dia.difference(hoy).inDays;
 
-    if (diff == 0) return 'Hoy';
-    if (diff == 1) return 'Mañana';
+    // Hora para mostrar junto a "Hoy"
+    final hora = tarea.horaEntrega != null
+        ? ' ${tarea.horaEntrega!.hour.toString().padLeft(2, '0')}:${tarea.horaEntrega!.minute.toString().padLeft(2, '0')}'
+        : '';
+
+    if (diff == 0) return 'Hoy$hora';
+    if (diff == 1) return 'Mañana$hora';
     if (diff == -1) return 'Ayer';
-    if (diff < 0) return 'Venció hace ${-diff} días';
-    return '${fecha.day}/${fecha.month}/${fecha.year}';
+    if (diff < 0) return 'Hace ${-diff} días';
+    return '${fecha.day}/${fecha.month}/${fecha.year}$hora';
   }
 
   bool get _vencida {
-    return !tarea.completada &&
-        tarea.fechaEntrega.isBefore(DateTime.now());
+    return !tarea.completada && tarea.fechaHoraEntrega.isBefore(DateTime.now());
   }
 
   @override
@@ -69,9 +73,9 @@ class TareaCard extends StatelessWidget {
                     Text(
                       tarea.titulo,
                       style: TextStyle(
-                        fontSize:      15,
-                        fontWeight:    FontWeight.bold,
-                        decoration:    tarea.completada
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        decoration: tarea.completada
                             ? TextDecoration.lineThrough
                             : null,
                         color: tarea.completada ? Colors.grey : null,
@@ -80,20 +84,29 @@ class TareaCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(Icons.book_outlined,
-                            size: 13, color: Colors.grey.shade600),
+                        Icon(
+                          Icons.book_outlined,
+                          size: 13,
+                          color: Colors.grey.shade600,
+                        ),
                         const SizedBox(width: 3),
-                        Text(tarea.materia,
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey.shade600)),
+                        Text(
+                          tarea.materia,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
                         const SizedBox(width: 10),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: AppTheme.colorTipo(tarea.tipo)
-                                .withOpacity(0.15),
+                            color: AppTheme.colorTipo(
+                              tarea.tipo,
+                            ).withOpacity(0.15),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(

@@ -308,4 +308,26 @@ class AuthService {
     );
     await user.reauthenticateWithCredential(cred);
   }
+
+  // ── RECUÉRDAME ────────────────────────────────────────────────────────────
+  Future<void> guardarPreferenciaRecordar(bool recordar) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('recordar_sesion', recordar);
+  }
+
+  Future<bool> debeRecordarSesion() async {
+    final prefs = await SharedPreferences.getInstance();
+    // Si nunca se guardó la preferencia, por defecto no recuerda
+    return prefs.getBool('recordar_sesion') ?? false;
+  }
+
+  Future<void> cerrarSesionSiNoRecuerda() async {
+    final hayUsuario = _auth.currentUser != null;
+    if (!hayUsuario) return;
+
+    final recuerda = await debeRecordarSesion();
+    if (!recuerda) {
+      await logout(); // Limpia auth + secure storage + prefs
+    }
+  }
 }

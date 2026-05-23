@@ -18,9 +18,10 @@ class DashboardView extends StatefulWidget {
 
 class _DashboardViewState extends State<DashboardView> {
   bool _cargando = true;
-  List<Tarea> _tareasHoy = [];
-  List<Tarea> _todasLasTareas = []; // ← NUEVO: para el calendario
+  List<Tarea> _tareasSemana = []; // ← CAMBIADO: antes _tareasHoy
+  List<Tarea> _todasLasTareas = [];
   int _totalPendientes = 0;
+  int _totalCompletadas = 0;
   int _totalVencidas = 0;
   Usuario? _usuario;
 
@@ -34,19 +35,35 @@ class _DashboardViewState extends State<DashboardView> {
     setState(() => _cargando = true);
     try {
       final usuario = await AuthService().getPerfil();
-      final hoy = await TareaService().getHoy();
       final todas = await TareaService().getAll();
       final ahora = DateTime.now();
+      final en7Dias = ahora.add(const Duration(days: 7));
+
+      // ← usa fechaHoraEntrega en todos los filtros
+      final semana =
+          todas
+              .where(
+                (t) =>
+                    !t.completada &&
+                    t.fechaHoraEntrega.isAfter(ahora) &&
+                    t.fechaHoraEntrega.isBefore(en7Dias),
+              )
+              .toList()
+            ..sort((a, b) => a.fechaHoraEntrega.compareTo(b.fechaHoraEntrega));
+
       final pendientes = todas.where((t) => !t.completada).length;
+      final completadas = todas.where((t) => t.completada).length;
       final vencidas = todas
-          .where((t) => !t.completada && t.fechaEntrega.isBefore(ahora))
+          .where((t) => !t.completada && t.fechaHoraEntrega.isBefore(ahora))
           .length;
+
       if (!mounted) return;
       setState(() {
         _usuario = usuario;
-        _tareasHoy = hoy;
-        _todasLasTareas = todas; // ← NUEVO
+        _tareasSemana = semana;
+        _todasLasTareas = todas;
         _totalPendientes = pendientes;
+        _totalCompletadas = completadas;
         _totalVencidas = vencidas;
         _cargando = false;
       });
@@ -71,7 +88,7 @@ class _DashboardViewState extends State<DashboardView> {
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            // ── Header de perfil ─────────────────────────────────────────
+            // ── Header de perfil ──────────────────────────────────────────
             SliverToBoxAdapter(
               child: _DashboardHeader(
                 usuario: _usuario,
@@ -80,7 +97,7 @@ class _DashboardViewState extends State<DashboardView> {
               ),
             ),
 
-            // ── Contenido ────────────────────────────────────────────────
+            // ── Contenido ─────────────────────────────────────────────────
             SliverPadding(
               padding: const EdgeInsets.all(16),
               sliver: SliverList(
@@ -99,46 +116,22 @@ class _DashboardViewState extends State<DashboardView> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Tarjetas resumen
+                  // ── NUEVO: Tarjeta resumen general ─────────────────────
                   Skeletonizer(
                     enabled: _cargando,
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _ResumenCard(
-                            titulo: 'Pendientes',
-                            valor: '$_totalPendientes',
-                            icono: Icons.pending_actions,
-                            color: AppTheme.warning,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _ResumenCard(
-                            titulo: 'Vencidas',
-                            valor: '$_totalVencidas',
-                            icono: Icons.warning_amber,
-                            color: AppTheme.danger,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _ResumenCard(
-                            titulo: 'Hoy',
-                            valor: '${_tareasHoy.length}',
-                            icono: Icons.today,
-                            color: AppTheme.primary,
-                          ),
-                        ),
-                      ],
+                    child: _ResumenGeneralCard(
+                      totalPendientes: _totalPendientes,
+                      totalCompletadas: _totalCompletadas,
+                      totalVencidas: _totalVencidas,
+                      onVerTareas: () => context.go('/tareas'),
                     ),
                   ),
 
                   const SizedBox(height: 24),
 
-                  // Tareas de hoy
+                  // ── Esta semana ────────────────────────────────────────
                   const Text(
-                    'Para hoy',
+                    'Lo que hay para esta semana',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
@@ -159,7 +152,7 @@ class _DashboardViewState extends State<DashboardView> {
                               ),
                             ),
                           )
-                        : _tareasHoy.isEmpty
+                        : _tareasSemana.isEmpty
                         ? Container(
                             padding: const EdgeInsets.all(24),
                             decoration: BoxDecoration(
@@ -181,7 +174,7 @@ class _DashboardViewState extends State<DashboardView> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        '¡Sin tareas para hoy!',
+                                        '¡Sin tareas para esta semana!',
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           color: Colors.green,
@@ -201,7 +194,7 @@ class _DashboardViewState extends State<DashboardView> {
                             ),
                           )
                         : Column(
-                            children: _tareasHoy
+                            children: _tareasSemana
                                 .map(
                                   (t) => TareaCard(
                                     tarea: t,
@@ -224,7 +217,7 @@ class _DashboardViewState extends State<DashboardView> {
                           ),
                   ),
 
-                  // ── Calendario ───────────────────────────────────────────
+                  // ── Calendario ────────────────────────────────────────
                   if (_cargando)
                     _CalendarioSkeleton()
                   else
@@ -242,7 +235,176 @@ class _DashboardViewState extends State<DashboardView> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Skeleton del calendario mientras carga
+// NUEVO: Tarjeta de resumen general
+// ─────────────────────────────────────────────────────────────────────────────
+class _ResumenGeneralCard extends StatelessWidget {
+  final int totalPendientes;
+  final int totalCompletadas;
+  final int totalVencidas;
+  final VoidCallback onVerTareas;
+
+  const _ResumenGeneralCard({
+    required this.totalPendientes,
+    required this.totalCompletadas,
+    required this.totalVencidas,
+    required this.onVerTareas,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final total = totalPendientes + totalCompletadas;
+    final progreso = total > 0 ? totalCompletadas / total : 0.0;
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppTheme.primary.withOpacity(0.07),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.primary.withOpacity(0.18)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Título
+          Row(
+            children: [
+              Icon(Icons.bar_chart_rounded, color: AppTheme.primary, size: 20),
+              const SizedBox(width: 8),
+              const Text(
+                'Resumen general',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Fila de stats
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _StatItem(
+                label: 'Total',
+                valor: '$total',
+                color: AppTheme.primary,
+                icono: Icons.assignment_outlined,
+              ),
+              _StatItem(
+                label: 'Completadas',
+                valor: '$totalCompletadas',
+                color: Colors.green,
+                icono: Icons.check_circle_outline,
+              ),
+              _StatItem(
+                label: 'Pendientes',
+                valor: '$totalPendientes',
+                color: AppTheme.warning,
+                icono: Icons.pending_actions,
+              ),
+              _StatItem(
+                label: 'Vencidas',
+                valor: '$totalVencidas',
+                color: AppTheme.danger,
+                icono: Icons.warning_amber_outlined,
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 14),
+
+          // Barra de progreso
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Progreso general',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  Text(
+                    '${(progreso * 100).toStringAsFixed(0)}%',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LinearProgressIndicator(
+                  value: progreso,
+                  minHeight: 8,
+                  backgroundColor: Colors.grey.shade200,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // Botón ver tareas
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: onVerTareas,
+              icon: const Icon(Icons.list_alt_rounded, size: 18),
+              label: const Text('Ver todas las tareas'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.primary,
+                side: BorderSide(color: AppTheme.primary),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Ítem individual del resumen
+class _StatItem extends StatelessWidget {
+  final String label;
+  final String valor;
+  final Color color;
+  final IconData icono;
+
+  const _StatItem({
+    required this.label,
+    required this.valor,
+    required this.color,
+    required this.icono,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Icon(icono, color: color, size: 22),
+        const SizedBox(height: 4),
+        Text(
+          valor,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Skeleton del calendario
 // ─────────────────────────────────────────────────────────────────────────────
 class _CalendarioSkeleton extends StatelessWidget {
   @override
@@ -401,48 +563,6 @@ class _DashboardHeader extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ── ResumenCard ───────────────────────────────────────────────────────────────
-class _ResumenCard extends StatelessWidget {
-  final String titulo;
-  final String valor;
-  final IconData icono;
-  final Color color;
-
-  const _ResumenCard({
-    required this.titulo,
-    required this.valor,
-    required this.icono,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          children: [
-            Icon(icono, color: color, size: 28),
-            const SizedBox(height: 6),
-            Text(
-              valor,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-            Text(
-              titulo,
-              style: const TextStyle(fontSize: 11, color: Colors.grey),
-            ),
-          ],
-        ),
       ),
     );
   }
