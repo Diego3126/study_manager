@@ -31,6 +31,8 @@ class _LoginViewState extends State<LoginView> {
         email: _email.text.trim(),
         password: _password.text.trim(),
       );
+      // Guarda si el usuario quiere ser recordado
+      await AuthService().guardarPreferenciaRecordar(_recuerdar);
       if (!mounted) return;
       context.go('/dashboard');
     } on Exception catch (e) {

@@ -31,21 +31,30 @@ class FirestoreService {
         .toList();
   }
 
-  // Obtener tareas de hoy
   Future<List<Tarea>> getHoy() async {
-    final hoy   = DateTime.now();
-    final inicio = DateTime(hoy.year, hoy.month, hoy.day);
-    final fin    = DateTime(hoy.year, hoy.month, hoy.day, 23, 59, 59);
-    final snap  = await _tareas
-        .where('fechaEntrega',
-            isGreaterThanOrEqualTo: inicio.toIso8601String())
-        .where('fechaEntrega',
-            isLessThanOrEqualTo: fin.toIso8601String())
-        .get();
-    return snap.docs
-        .map((doc) => Tarea.fromFirestore(doc.id, doc.data()))
-        .toList();
-  }
+  final hoy    = DateTime.now();
+  final inicio = DateTime(hoy.year, hoy.month, hoy.day);
+  final fin    = DateTime(hoy.year, hoy.month, hoy.day, 23, 59, 59);
+
+  final snap = await _tareas
+      .where('fechaEntrega', isGreaterThanOrEqualTo: inicio.toIso8601String())
+      .where('fechaEntrega', isLessThanOrEqualTo: fin.toIso8601String())
+      .get();
+
+  final tareas = snap.docs
+      .map((doc) => Tarea.fromFirestore(doc.id, doc.data()))
+      .toList();
+
+  // ← Filtra por hora real, no solo por día
+  return tareas
+      .where((t) => t.fechaHoraEntrega.isAfter(hoy) ||
+                    _mismoMinuto(t.fechaHoraEntrega, hoy))
+      .toList();
+}
+
+bool _mismoMinuto(DateTime a, DateTime b) =>
+    a.year == b.year && a.month == b.month && a.day == b.day &&
+    a.hour == b.hour && a.minute == b.minute;
 
   // Obtener por ID
   Future<Tarea> getById(String id) async {
