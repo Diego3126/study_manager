@@ -17,6 +17,7 @@ import '../views/perfil/perfil_info_view.dart';
 import '../views/perfil/cambiar_password_view.dart';
 import '../views/main_shell.dart';
 import '../views/splash/splash_view.dart';
+import '../views/asistente/asistente_view.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/splash',
@@ -34,7 +35,10 @@ final GoRouter appRouter = GoRouter(
   routes: [
     GoRoute(path: '/splash', builder: (context, state) => const SplashView()),
     GoRoute(path: '/login', builder: (context, state) => const LoginView()),
-    GoRoute(path: '/registro', builder: (context, state) => const RegistroView()),
+    GoRoute(
+      path: '/registro',
+      builder: (context, state) => const RegistroView(),
+    ),
 
     // ── Shell con barra inferior ──────────────────────────────────────────
     ShellRoute(
@@ -64,19 +68,40 @@ final GoRouter appRouter = GoRouter(
     ),
 
     // ── Rutas que van por encima del shell (sin barra) ────────────────────
-    GoRoute(path: '/tareas/nueva', builder: (context, state) => const TareaFormView()),
+    GoRoute(
+      path: '/tareas/nueva',
+      builder: (context, state) => const TareaFormView(),
+    ),
     GoRoute(
       path: '/tareas/:id',
-      builder: (context, state) => TareaDetalleView(id: state.pathParameters['id']!),
+      builder: (context, state) =>
+          TareaDetalleView(id: state.pathParameters['id']!),
     ),
     GoRoute(
       path: '/tareas/:id/editar',
-      builder: (context, state) => TareaFormView(id: state.pathParameters['id']!),
+      builder: (context, state) =>
+          TareaFormView(id: state.pathParameters['id']!),
     ),
     GoRoute(path: '/perfil', builder: (context, state) => const PerfilView()),
-    GoRoute(path: '/perfil/editar', builder: (context, state) => const EditarPerfilView()),
-    GoRoute(path: '/perfil/info', builder: (context, state) => const PerfilInfoView()),
-    GoRoute(path: '/perfil/cambiar-contrasena', builder: (context, state) => const CambiarPasswordView()),
-    GoRoute(path: '/universidades/nueva', builder: (context, state) => const UniversidadFormView()),
+    GoRoute(
+      path: '/perfil/editar',
+      builder: (context, state) => const EditarPerfilView(),
+    ),
+    GoRoute(
+      path: '/perfil/info',
+      builder: (context, state) => const PerfilInfoView(),
+    ),
+    GoRoute(
+      path: '/perfil/cambiar-contrasena',
+      builder: (context, state) => const CambiarPasswordView(),
+    ),
+    GoRoute(
+      path: '/universidades/nueva',
+      builder: (context, state) => const UniversidadFormView(),
+    ),
+    GoRoute(
+      path: '/asistente',
+      builder: (context, state) => const AsistenteView(),
+    ),
   ],
 );
