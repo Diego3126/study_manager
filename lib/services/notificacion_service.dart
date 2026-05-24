@@ -41,7 +41,13 @@ class NotificationService {
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
         >();
-    await androidPlugin?.requestNotificationsPermission();
+
+    final permitido = await androidPlugin?.canScheduleExactNotifications();
+    debugPrint('⏰ ¿Puede programar alarmas exactas? $permitido');
+
+    if (permitido == false) {
+      await androidPlugin?.requestExactAlarmsPermission();
+    }
 
     _inicializado = true;
   }
@@ -55,6 +61,11 @@ class NotificationService {
 
     final fechaHora = tarea.fechaHoraEntrega;
     final ahora = DateTime.now();
+
+    debugPrint('🔔 Intentando programar notificaciones para: ${tarea.titulo}');
+    debugPrint('📅 Fecha/hora de entrega: $fechaHora');
+    debugPrint('🕐 Ahora: $ahora');
+    debugPrint('⏰ Zona horaria local: ${tz.local.name}');
 
     // IDs únicos basados en el firestoreId
     final idBase = tarea.firestoreId.hashCode.abs();
@@ -84,6 +95,13 @@ class NotificationService {
         momento: momento1Hora,
       );
     }
+
+    debugPrint(
+      '📌 1 día antes: $momento1Dia — ¿futuro? ${momento1Dia.isAfter(ahora)}',
+    );
+    debugPrint(
+      '📌 1 hora antes: $momento1Hora — ¿futuro? ${momento1Hora.isAfter(ahora)}',
+    );
   }
 
   // ── Cancelar notificaciones de una tarea ──────────────────────────────────
@@ -112,31 +130,43 @@ class NotificationService {
   }) async {
     final tzMomento = tz.TZDateTime.from(momento, tz.local);
 
-    await _plugin.zonedSchedule(
-      id,
-      titulo,
-      cuerpo,
-      tzMomento,
-      NotificationDetails(
-        android: AndroidNotificationDetails(
-          'tareas_channel',
-          'Recordatorios de tareas',
-          channelDescription: 'Notificaciones de vencimiento de tareas',
-          importance: Importance.high,
-          priority: Priority.high,
-          icon: '@mipmap/ic_launcher',
-          color: const Color(0xFF6C47FF),
+    debugPrint('📬 Programando id=$id');
+    debugPrint('   titulo: $titulo');
+    debugPrint('   tzMomento: $tzMomento');
+    debugPrint('   tz.local: ${tz.local.name}');
+    debugPrint('   ahora en tz: ${tz.TZDateTime.now(tz.local)}');
+
+    try {
+      await _plugin.zonedSchedule(
+        id,
+        titulo,
+        cuerpo,
+        tzMomento,
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            'tareas_channel',
+            'Recordatorios de tareas',
+            channelDescription: 'Notificaciones de vencimiento de tareas',
+            importance: Importance.high,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+            color: const Color(0xFF6C47FF),
+          ),
+          iOS: const DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
         ),
-        iOS: const DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-        ),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-    );
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation
+                .absoluteTime, // ✅ requerido en v17
+      );
+      debugPrint('✅ Notificación programada exitosamente id=$id');
+    } catch (e) {
+      debugPrint('❌ Error programando notificación: $e');
+    }
   }
 
   // ── Helper: detectar zona horaria local ───────────────────────────────────
