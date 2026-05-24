@@ -43,66 +43,66 @@ class _ColPalette {
 
 // ── Paletas modo CLARO ────────────────────────────────────────────────────────
 const _palettePorHacerLight = _ColPalette(
-  header:     Color(0xFFF1F3F9),
+  header: Color(0xFFF1F3F9),
   headerText: Color(0xFF374151),
-  badge:      Color(0xFF374151),
-  badgeText:  Colors.white,
-  body:       Color(0xFFF8F9FC),
-  border:     Color(0xFFE5E7EB),
+  badge: Color(0xFF374151),
+  badgeText: Colors.white,
+  body: Color(0xFFF8F9FC),
+  border: Color(0xFFE5E7EB),
   dropBorder: Color(0xFFD1D5DB),
-  dropText:   Color(0xFF9CA3AF),
+  dropText: Color(0xFF9CA3AF),
 );
 const _paletteProgresoLight = _ColPalette(
-  header:     Color(0xFFFFF3E0),
+  header: Color(0xFFFFF3E0),
   headerText: Color(0xFFB45309),
-  badge:      Color(0xFFF59E0B),
-  badgeText:  Colors.white,
-  body:       Color(0xFFFFFBF5),
-  border:     Color(0xFFFDE68A),
+  badge: Color(0xFFF59E0B),
+  badgeText: Colors.white,
+  body: Color(0xFFFFFBF5),
+  border: Color(0xFFFDE68A),
   dropBorder: Color(0xFFFCD34D),
-  dropText:   Color(0xFFD97706),
+  dropText: Color(0xFFD97706),
 );
 const _paletteFinalizadoLight = _ColPalette(
-  header:     Color(0xFFECFDF5),
+  header: Color(0xFFECFDF5),
   headerText: Color(0xFF065F46),
-  badge:      Color(0xFF10B981),
-  badgeText:  Colors.white,
-  body:       Color(0xFFF6FDFB),
-  border:     Color(0xFFA7F3D0),
+  badge: Color(0xFF10B981),
+  badgeText: Colors.white,
+  body: Color(0xFFF6FDFB),
+  border: Color(0xFFA7F3D0),
   dropBorder: Color(0xFF6EE7B7),
-  dropText:   Color(0xFF059669),
+  dropText: Color(0xFF059669),
 );
 
 // ── Paletas modo OSCURO ────────────────────────────────────────────────────────
 const _palettePorHacerDark = _ColPalette(
-  header:     Color(0xFF232638),
+  header: Color(0xFF232638),
   headerText: Color(0xFFB0B8CC),
-  badge:      Color(0xFF3A3F5C),
-  badgeText:  Color(0xFFB0B8CC),
-  body:       Color(0xFF1A1D2E),
-  border:     Color(0xFF2A2D45),
+  badge: Color(0xFF3A3F5C),
+  badgeText: Color(0xFFB0B8CC),
+  body: Color(0xFF1A1D2E),
+  border: Color(0xFF2A2D45),
   dropBorder: Color(0xFF3A3F5C),
-  dropText:   Color(0xFF6B7280),
+  dropText: Color(0xFF6B7280),
 );
 const _paletteProgresoDark = _ColPalette(
-  header:     Color(0xFF2D2410),
+  header: Color(0xFF2D2410),
   headerText: Color(0xFFFBBF24),
-  badge:      Color(0xFFF59E0B),
-  badgeText:  Color(0xFF1A1500),
-  body:       Color(0xFF1E1A0F),
-  border:     Color(0xFF3D2E00),
+  badge: Color(0xFFF59E0B),
+  badgeText: Color(0xFF1A1500),
+  body: Color(0xFF1E1A0F),
+  border: Color(0xFF3D2E00),
   dropBorder: Color(0xFFFCD34D),
-  dropText:   Color(0xFFD97706),
+  dropText: Color(0xFFD97706),
 );
 const _paletteFinalizadoDark = _ColPalette(
-  header:     Color(0xFF0D2B1F),
+  header: Color(0xFF0D2B1F),
   headerText: Color(0xFF34D399),
-  badge:      Color(0xFF10B981),
-  badgeText:  Color(0xFF001A10),
-  body:       Color(0xFF0A1E16),
-  border:     Color(0xFF1A4030),
+  badge: Color(0xFF10B981),
+  badgeText: Color(0xFF001A10),
+  body: Color(0xFF0A1E16),
+  border: Color(0xFF1A4030),
   dropBorder: Color(0xFF6EE7B7),
-  dropText:   Color(0xFF059669),
+  dropText: Color(0xFF059669),
 );
 
 // ── Selector de paleta según modo ─────────────────────────────────────────────
@@ -137,8 +137,8 @@ class _EnfoqueViewState extends State<EnfoqueView>
   Map<String, Color> _coloresMateria = {};
 
   static const Map<String, int> _modos = {
-    'Enfoque':        25 * 60,
-    'Descanso corto':  5 * 60,
+    'Enfoque': 25 * 60,
+    'Descanso corto': 5 * 60,
     'Descanso largo': 15 * 60,
   };
   String _modoActual = 'Enfoque';
@@ -313,13 +313,19 @@ class _EnfoqueViewState extends State<EnfoqueView>
         final tipo = data['tipo'] as String? ?? 'Enfoque';
         final esLibre = data['modoLibre'] as bool? ?? false;
         if (esLibre) {
-          if (tipo == 'Enfoque') enfoqueL++;
-          else if (tipo == 'Descanso corto') cortoL++;
-          else if (tipo == 'Descanso largo') largoL++;
+          if (tipo == 'Enfoque')
+            enfoqueL++;
+          else if (tipo == 'Descanso corto')
+            cortoL++;
+          else if (tipo == 'Descanso largo')
+            largoL++;
         } else {
-          if (tipo == 'Enfoque') enfoque++;
-          else if (tipo == 'Descanso corto') corto++;
-          else if (tipo == 'Descanso largo') largo++;
+          if (tipo == 'Enfoque')
+            enfoque++;
+          else if (tipo == 'Descanso corto')
+            corto++;
+          else if (tipo == 'Descanso largo')
+            largo++;
         }
       }
       setState(() {
@@ -337,11 +343,15 @@ class _EnfoqueViewState extends State<EnfoqueView>
     final estadoAnterior = kt.estado;
     setState(() => kt.estado = nuevoEstado);
     if (nuevoEstado == KanbanEstado.finalizado) {
-      try { await TareaService().marcarCompletada(kt.tarea.firestoreId!, true); } catch (_) {}
+      try {
+        await TareaService().marcarCompletada(kt.tarea.firestoreId!, true);
+      } catch (_) {}
     }
     if (estadoAnterior == KanbanEstado.finalizado &&
         nuevoEstado != KanbanEstado.finalizado) {
-      try { await TareaService().marcarCompletada(kt.tarea.firestoreId!, false); } catch (_) {}
+      try {
+        await TareaService().marcarCompletada(kt.tarea.firestoreId!, false);
+      } catch (_) {}
     }
   }
 
@@ -383,13 +393,17 @@ class _EnfoqueViewState extends State<EnfoqueView>
         } else {
           setState(() {
             if (_modoClasico) {
-              if (_modoActual == 'Descanso corto') _sesionesDescansoCorto++;
-              else _sesionesDescansoLargo++;
+              if (_modoActual == 'Descanso corto')
+                _sesionesDescansoCorto++;
+              else
+                _sesionesDescansoLargo++;
               _esperandoDescanso = false;
               _esperandoEnfoque = true;
             } else {
-              if (_modoActual == 'Descanso corto') _sesionesDescansoCortoLibre++;
-              else _sesionesDescansoLargoLibre++;
+              if (_modoActual == 'Descanso corto')
+                _sesionesDescansoCortoLibre++;
+              else
+                _sesionesDescansoLargoLibre++;
             }
             _segundos = _modos[_modoActual]!;
             _corriendo = false;
@@ -414,7 +428,8 @@ class _EnfoqueViewState extends State<EnfoqueView>
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) return;
       await FirebaseFirestore.instance
-          .collection('usuarios').doc(uid)
+          .collection('usuarios')
+          .doc(uid)
           .collection('sesiones_pomodoro')
           .add({
             'fecha': DateTime.now().toIso8601String(),
@@ -446,13 +461,20 @@ class _EnfoqueViewState extends State<EnfoqueView>
   void _reiniciar() {
     _timer?.cancel();
     _tiempoInicio = null;
-    setState(() { _segundos = _modos[_modoActual]!; _corriendo = false; });
+    setState(() {
+      _segundos = _modos[_modoActual]!;
+      _corriendo = false;
+    });
   }
 
   void _cambiarModo(String modo) {
     _timer?.cancel();
     _tiempoInicio = null;
-    setState(() { _modoActual = modo; _segundos = _modos[modo]!; _corriendo = false; });
+    setState(() {
+      _modoActual = modo;
+      _segundos = _modos[modo]!;
+      _corriendo = false;
+    });
   }
 
   void _mostrarSnack(String msg) {
@@ -476,19 +498,23 @@ class _EnfoqueViewState extends State<EnfoqueView>
     late String emoji;
 
     if (pct >= 80) {
-      mensaje = '¡Excelente sesión! Completaste la mayoría de tus tareas. ¡Sigue así!';
+      mensaje =
+          '¡Excelente! Completaste todas las tareas que te propusiste. ¡Sigue así!';
       colorMensaje = Colors.green;
       emoji = '🏆';
     } else if (pct >= 50) {
-      mensaje = '¡Buen trabajo! Completaste más de la mitad. En el siguiente Pomodoro puedes mejorar.';
+      mensaje =
+          '¡Buen trabajo! Completaste la mitad o más de la mitad, Ya casi estamos!';
       colorMensaje = Colors.orange;
       emoji = '💪';
     } else if (fin > 0) {
-      mensaje = 'Completaste algunas tareas. Intenta enfocarte en menos tareas la próxima sesión.';
+      mensaje =
+          '¡Ya completaste una o más tareas! Sigue así que vas muy bien!';
       colorMensaje = Colors.orange;
       emoji = '📝';
     } else {
-      mensaje = 'Esta vez fue difícil. Recuerda poner menos tareas en "En progreso" la próxima vez.';
+      mensaje =
+          '¡No te desanimes! Todavía tienes un camino que recorrer.';
       colorMensaje = Colors.red;
       emoji = '💡';
     }
@@ -514,7 +540,8 @@ class _EnfoqueViewState extends State<EnfoqueView>
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 40, height: 4,
+                width: 40,
+                height: 4,
                 margin: const EdgeInsets.only(bottom: 20),
                 decoration: BoxDecoration(
                   // ✅ onSurface con opacidad en lugar de Color(0xFFE5E7EB) fijo
@@ -535,7 +562,10 @@ class _EnfoqueViewState extends State<EnfoqueView>
               ),
               const SizedBox(height: 20),
               Container(
-                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 16,
+                  horizontal: 12,
+                ),
                 decoration: BoxDecoration(
                   // ✅ onSurface con opacidad en lugar de Color(0xFFF8F9FC) fijo
                   color: colorScheme.onSurface.withOpacity(0.04),
@@ -554,7 +584,8 @@ class _EnfoqueViewState extends State<EnfoqueView>
                       icono: Icons.pending_actions,
                     ),
                     Container(
-                      width: 1, height: 40,
+                      width: 1,
+                      height: 40,
                       // ✅ divider del tema
                       color: colorScheme.onSurface.withOpacity(0.1),
                     ),
@@ -565,7 +596,8 @@ class _EnfoqueViewState extends State<EnfoqueView>
                       icono: Icons.check_circle,
                     ),
                     Container(
-                      width: 1, height: 40,
+                      width: 1,
+                      height: 40,
                       color: colorScheme.onSurface.withOpacity(0.1),
                     ),
                     _ResultadoItem(
@@ -609,24 +641,32 @@ class _EnfoqueViewState extends State<EnfoqueView>
               ),
               const SizedBox(height: 24),
               SizedBox(
-                width: double.infinity, height: 52,
+                width: double.infinity,
+                height: 52,
                 child: OutlinedButton(
                   onPressed: () => Navigator.of(sheetContext).pop(),
                   style: OutlinedButton.styleFrom(
                     // ✅ primaryOf(context) en lugar de AppTheme.primary fijo
                     foregroundColor: AppTheme.primaryOf(context),
-                    side: BorderSide(color: AppTheme.primaryOf(context), width: 1.5),
+                    side: BorderSide(
+                      color: AppTheme.primaryOf(context),
+                      width: 1.5,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
-                    textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                    textStyle: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                    ),
                   ),
                   child: const Text('Continuar sesión'),
                 ),
               ),
               const SizedBox(height: 12),
               SizedBox(
-                width: double.infinity, height: 52,
+                width: double.infinity,
+                height: 52,
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.of(sheetContext).pop();
@@ -659,7 +699,10 @@ class _EnfoqueViewState extends State<EnfoqueView>
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
-                    textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                    textStyle: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                    ),
                   ),
                   child: const Text('Finalizar sesión'),
                 ),
@@ -671,12 +714,17 @@ class _EnfoqueViewState extends State<EnfoqueView>
     );
   }
 
-  Future<void> _guardarSesion(int finalizadas, int enProgreso, int productividad) async {
+  Future<void> _guardarSesion(
+    int finalizadas,
+    int enProgreso,
+    int productividad,
+  ) async {
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) return;
       await FirebaseFirestore.instance
-          .collection('usuarios').doc(uid)
+          .collection('usuarios')
+          .doc(uid)
           .collection('sesiones_pomodoro')
           .add({
             'fecha': DateTime.now().toIso8601String(),
@@ -692,7 +740,9 @@ class _EnfoqueViewState extends State<EnfoqueView>
 
   void _resetKanban() {
     setState(() {
-      for (final kt in _kanbanTareas) { kt.estado = KanbanEstado.porHacer; }
+      for (final kt in _kanbanTareas) {
+        kt.estado = KanbanEstado.porHacer;
+      }
       _sesionIniciada = false;
       _segundos = _modos[_modoActual]!;
       _corriendo = false;
@@ -725,7 +775,8 @@ class _EnfoqueViewState extends State<EnfoqueView>
             children: [
               Center(
                 child: Container(
-                  width: 40, height: 4,
+                  width: 40,
+                  height: 4,
                   margin: const EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
                     // ✅ onSurface con opacidad
@@ -775,7 +826,8 @@ class _EnfoqueViewState extends State<EnfoqueView>
               ),
               const SizedBox(height: 24),
               SizedBox(
-                width: double.infinity, height: 50,
+                width: double.infinity,
+                height: 50,
                 child: ElevatedButton(
                   onPressed: () => Navigator.of(ctx).pop(),
                   style: ElevatedButton.styleFrom(
@@ -810,9 +862,12 @@ class _EnfoqueViewState extends State<EnfoqueView>
   // ✅ _colorModo usa primaryOf(context) — llamado solo dentro de build
   Color _colorModo(BuildContext context) {
     switch (_modoActual) {
-      case 'Enfoque':        return AppTheme.primaryOf(context);
-      case 'Descanso corto': return AppTheme.accent;
-      default:               return AppTheme.secondary;
+      case 'Enfoque':
+        return AppTheme.primaryOf(context);
+      case 'Descanso corto':
+        return AppTheme.accent;
+      default:
+        return AppTheme.secondary;
     }
   }
 
@@ -847,9 +902,11 @@ class _EnfoqueViewState extends State<EnfoqueView>
       curve: Curves.easeInOut,
       decoration: BoxDecoration(
         // ✅ colorTop ya usa primaryOf(context) en modo Enfoque
-        color: _tabController.index == 1 ? colorTop : AppTheme.primaryOf(context),
+        color: _tabController.index == 1
+            ? colorTop
+            : AppTheme.primaryOf(context),
         borderRadius: BorderRadius.only(
-          bottomLeft:  Radius.circular(_tabController.index == 1 ? 0 : 28),
+          bottomLeft: Radius.circular(_tabController.index == 1 ? 0 : 28),
           bottomRight: Radius.circular(_tabController.index == 1 ? 0 : 28),
         ),
       ),
@@ -906,12 +963,27 @@ class _EnfoqueViewState extends State<EnfoqueView>
                             final bloqueado = _modoClasico
                                 ? (_corriendo || _sesionIniciada)
                                 : _corriendo;
-                            if (!bloqueado)
-                              setState(() => _modoClasico = !_modoClasico);
+                            if (!bloqueado) {
+                              _timer?.cancel();
+                              setState(() {
+                                _modoClasico = !_modoClasico;
+                                _modoActual = 'Enfoque'; // ✅ volver a enfoque
+                                _segundos =
+                                    _modos['Enfoque']!; // ✅ resetear contador
+                                _corriendo = false;
+                                _tiempoInicio = null;
+                                _esperandoDescanso =
+                                    false; // ✅ limpiar estado clásico
+                                _esperandoEnfoque = false;
+                                _pomodoroCiclo = 0;
+                                _sesionIniciada = false;
+                              });
+                            }
                           },
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 250),
-                            width: 40, height: 22,
+                            width: 40,
+                            height: 22,
                             decoration: BoxDecoration(
                               color: Colors.white.withOpacity(0.3),
                               borderRadius: BorderRadius.circular(11),
@@ -926,8 +998,11 @@ class _EnfoqueViewState extends State<EnfoqueView>
                                   ? Alignment.centerLeft
                                   : Alignment.centerRight,
                               child: Container(
-                                width: 16, height: 16,
-                                margin: const EdgeInsets.symmetric(horizontal: 3),
+                                width: 16,
+                                height: 16,
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 3,
+                                ),
                                 decoration: const BoxDecoration(
                                   color: Colors.white,
                                   shape: BoxShape.circle,
@@ -959,11 +1034,23 @@ class _EnfoqueViewState extends State<EnfoqueView>
               unselectedLabelColor: Colors.white54,
               indicatorColor: Colors.white,
               indicatorWeight: 2.5,
-              labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+              labelStyle: const TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 13,
+              ),
               tabs: const [
-                Tab(icon: Icon(Icons.view_kanban_outlined, size: 18), text: 'Kanban'),
-                Tab(icon: Icon(Icons.timer_outlined, size: 18), text: 'Pomodoro'),
+                Tab(
+                  icon: Icon(Icons.view_kanban_outlined, size: 18),
+                  text: 'Kanban',
+                ),
+                Tab(
+                  icon: Icon(Icons.timer_outlined, size: 18),
+                  text: 'Pomodoro',
+                ),
               ],
             ),
           ],
@@ -976,8 +1063,8 @@ class _EnfoqueViewState extends State<EnfoqueView>
   // TAB 1 — KANBAN
   // ══════════════════════════════════════════════════════════════════════════
   Widget _buildKanban(BuildContext context) {
-    final colorScheme  = Theme.of(context).colorScheme;
-    final isDark       = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = AppTheme.primaryOf(context);
 
     if (_cargandoTareas) {
@@ -1109,7 +1196,9 @@ class _EnfoqueViewState extends State<EnfoqueView>
             child: ElevatedButton.icon(
               onPressed: () => _tabController.animateTo(1),
               icon: const Icon(Icons.play_arrow_rounded),
-              label: Text('Iniciar Pomodoro con ${_enProgreso.length} tarea(s)'),
+              label: Text(
+                'Iniciar Pomodoro con ${_enProgreso.length} tarea(s)',
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryColor,
                 foregroundColor: Colors.white,
@@ -1118,7 +1207,10 @@ class _EnfoqueViewState extends State<EnfoqueView>
                   borderRadius: BorderRadius.circular(28),
                 ),
                 elevation: 0,
-                textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                textStyle: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
               ),
             ),
           ),
@@ -1130,9 +1222,9 @@ class _EnfoqueViewState extends State<EnfoqueView>
   // TAB 2 — POMODORO
   // ══════════════════════════════════════════════════════════════════════════
   Widget _buildPomodoro(BuildContext context) {
-    final colorScheme  = Theme.of(context).colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
     final primaryColor = AppTheme.primaryOf(context);
-    final colorTop     = _colorModo(context);
+    final colorTop = _colorModo(context);
 
     final selectorBloqueado = _modoClasico
         ? (_pomodoroCiclo > 0 ||
@@ -1170,12 +1262,16 @@ class _EnfoqueViewState extends State<EnfoqueView>
                         final seleccionado = _modoActual == modo;
                         return Expanded(
                           child: GestureDetector(
-                            onTap: () { if (!_corriendo) _cambiarModo(modo); },
+                            onTap: () {
+                              if (!_corriendo) _cambiarModo(modo);
+                            },
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 220),
                               padding: const EdgeInsets.symmetric(vertical: 8),
                               decoration: BoxDecoration(
-                                color: seleccionado ? Colors.white : Colors.transparent,
+                                color: seleccionado
+                                    ? Colors.white
+                                    : Colors.transparent,
                                 borderRadius: BorderRadius.circular(26),
                               ),
                               child: Text(
@@ -1202,12 +1298,14 @@ class _EnfoqueViewState extends State<EnfoqueView>
               // ── Círculo timer ─────────────────────────────────────────
               Center(
                 child: SizedBox(
-                  width: 220, height: 220,
+                  width: 220,
+                  height: 220,
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
                       Container(
-                        width: 220, height: 220,
+                        width: 220,
+                        height: 220,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           // ✅ surface del tema en lugar de Colors.white fijo
@@ -1223,7 +1321,8 @@ class _EnfoqueViewState extends State<EnfoqueView>
                         ),
                       ),
                       SizedBox(
-                        width: 200, height: 200,
+                        width: 200,
+                        height: 200,
                         child: CircularProgressIndicator(
                           value: _progreso,
                           strokeWidth: 10,
@@ -1260,11 +1359,13 @@ class _EnfoqueViewState extends State<EnfoqueView>
                         ],
                       ),
                       Positioned(
-                        right: 0, bottom: 8,
+                        right: 0,
+                        bottom: 8,
                         child: GestureDetector(
                           onTap: _mostrarInfoModos,
                           child: Container(
-                            width: 30, height: 30,
+                            width: 30,
+                            height: 30,
                             decoration: BoxDecoration(
                               // ✅ surface del tema
                               color: colorScheme.surface,
@@ -1308,7 +1409,9 @@ class _EnfoqueViewState extends State<EnfoqueView>
                     decoration: BoxDecoration(
                       color: Colors.orange.withOpacity(0.08),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.orange.withOpacity(0.25)),
+                      border: Border.all(
+                        color: Colors.orange.withOpacity(0.25),
+                      ),
                     ),
                     child: Text(
                       _esDescansoLargo
@@ -1324,14 +1427,22 @@ class _EnfoqueViewState extends State<EnfoqueView>
                   ),
                   const SizedBox(height: 12),
                   _FocusifyBtn(
-                    label: _esDescansoLargo ? 'Ir a descanso largo' : 'Ir a descanso corto',
-                    icon: _esDescansoLargo ? Icons.nightlight_round : Icons.coffee_rounded,
+                    label: _esDescansoLargo
+                        ? 'Ir a descanso largo'
+                        : 'Ir a descanso corto',
+                    icon: _esDescansoLargo
+                        ? Icons.nightlight_round
+                        : Icons.coffee_rounded,
                     color: Colors.orange,
                     filled: true,
                     onTap: () {
                       setState(() {
                         _esperandoDescanso = false;
-                        _cambiarModo(_esDescansoLargo ? 'Descanso largo' : 'Descanso corto');
+                        _cambiarModo(
+                          _esDescansoLargo
+                              ? 'Descanso largo'
+                              : 'Descanso corto',
+                        );
                       });
                     },
                   ),
@@ -1440,9 +1551,21 @@ class _EnfoqueViewState extends State<EnfoqueView>
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          _MiniStat('En progreso', '${_enProgreso.length}', Colors.orange),
-                          _MiniStat('Finalizadas',  '${_finalizado.length}', Colors.green),
-                          _MiniStat('Por hacer',    '${_porHacer.length}',   colorScheme.onSurface.withOpacity(0.4)),
+                          _MiniStat(
+                            'En progreso',
+                            '${_enProgreso.length}',
+                            Colors.orange,
+                          ),
+                          _MiniStat(
+                            'Finalizadas',
+                            '${_finalizado.length}',
+                            Colors.green,
+                          ),
+                          _MiniStat(
+                            'Por hacer',
+                            '${_porHacer.length}',
+                            colorScheme.onSurface.withOpacity(0.4),
+                          ),
                         ],
                       ),
                     ],
@@ -1450,7 +1573,7 @@ class _EnfoqueViewState extends State<EnfoqueView>
                 ),
                 const SizedBox(height: 12),
 
-                if (_finalizado.isNotEmpty)
+                if (_enProgreso.isNotEmpty || _finalizado.isNotEmpty)
                   OutlinedButton.icon(
                     onPressed: _mostrarResultados,
                     icon: const Icon(Icons.insights_rounded),
@@ -1517,7 +1640,10 @@ class _KanbanColumna extends StatelessWidget {
             child: Column(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 8),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 9,
+                    horizontal: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: palette.header,
                     borderRadius: const BorderRadius.vertical(
@@ -1543,7 +1669,10 @@ class _KanbanColumna extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: palette.badge,
                           borderRadius: BorderRadius.circular(10),
@@ -1568,7 +1697,9 @@ class _KanbanColumna extends StatelessWidget {
                           itemCount: tareas.length,
                           itemBuilder: (context, i) => _KanbanCard(
                             kt: tareas[i],
-                            materiaColor: colorDeMateria(tareas[i].tarea.materia),
+                            materiaColor: colorDeMateria(
+                              tareas[i].tarea.materia,
+                            ),
                           ),
                         ),
                 ),
@@ -1705,7 +1836,8 @@ class _KanbanCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 6, height: 6,
+                width: 6,
+                height: 6,
                 decoration: BoxDecoration(
                   color: AppTheme.colorPrioridad(kt.tarea.prioridad),
                   shape: BoxShape.circle,
@@ -1752,7 +1884,8 @@ class _FocusifyBtn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: double.infinity, height: 50,
+      width: double.infinity,
+      height: 50,
       child: filled
           ? ElevatedButton.icon(
               onPressed: onTap,
@@ -1765,7 +1898,10 @@ class _FocusifyBtn extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),
-                textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                textStyle: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                ),
               ),
             )
           : OutlinedButton.icon(
@@ -1778,7 +1914,10 @@ class _FocusifyBtn extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),
-                textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                textStyle: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                ),
               ),
             ),
     );
@@ -1880,7 +2019,11 @@ class _ResultadoItem extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           valor,
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color),
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
         ),
         Text(
           label,
@@ -1937,7 +2080,9 @@ class _InfoModoCard extends StatelessWidget {
               Text(
                 titulo,
                 style: TextStyle(
-                  fontSize: 15, fontWeight: FontWeight.w800, color: color,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: color,
                 ),
               ),
             ],
@@ -1986,7 +2131,11 @@ class _MiniStat extends StatelessWidget {
       children: [
         Text(
           valor,
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color),
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
         ),
         Text(
           label,

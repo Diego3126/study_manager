@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:study_manager/services/notificacion_service.dart';
 import '../../models/tarea_model.dart';
 import '../../services/tarea_service.dart';
 import '../../themes/app_theme.dart';
@@ -162,9 +163,10 @@ class _TareaDetalleViewState extends State<TareaDetalleView> {
     );
 
     if (confirmar != true) return;
-    await TareaService().eliminar(widget.id);
-    if (!mounted) return;
-    context.pop();
+await TareaService().eliminar(widget.id);
+await NotificationService().cancelarParaTarea(widget.id); // ✅ cancelar al eliminar
+if (!mounted) return;
+context.pop();
   }
 
   @override
@@ -334,12 +336,23 @@ class _TareaDetalleViewState extends State<TareaDetalleView> {
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: () async {
-                      await TareaService().marcarCompletada(
-                        tarea.firestoreId!,
-                        !tarea.completada,
-                      );
-                      _cargar();
-                    },
+  final nuevaCompletada = !tarea.completada;
+  await TareaService().marcarCompletada(
+    tarea.firestoreId!,
+    nuevaCompletada,
+  );
+
+  // ── Notificaciones ──────────────────────────────────────────
+  if (nuevaCompletada) {
+    // Si se completa → cancelar recordatorios
+    await NotificationService().cancelarParaTarea(tarea.firestoreId!);
+  } else {
+    // Si se reactiva → volver a programar
+    await NotificationService().programarParaTarea(tarea);
+  }
+
+  _cargar();
+},
                     icon: Icon(
                       tarea.completada
                           ? Icons.undo_rounded

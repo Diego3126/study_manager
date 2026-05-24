@@ -8,6 +8,7 @@ import '../../models/tarea_model.dart';
 import '../../services/tarea_service.dart';
 import '../../services/auth_service.dart';
 import '../../themes/app_theme.dart';
+import '../../services/notificacion_service.dart';
 
 class TareaFormView extends StatefulWidget {
   final String? id;
@@ -494,55 +495,59 @@ class _TareaFormViewState extends State<TareaFormView> {
   }
 
   Future<void> _guardar() async {
-    if (!_formKey.currentState!.validate()) return;
+  if (!_formKey.currentState!.validate()) return;
 
-    final confirmar = await _mostrarConfirmacion();
-    if (!confirmar) return;
+  final confirmar = await _mostrarConfirmacion();
+  if (!confirmar) return;
 
-    setState(() => _guardando = true);
-    try {
-      final List<String> urlsAdjuntos = [];
-      urlsAdjuntos.addAll(_archivosExistentes);
+  setState(() => _guardando = true);
+  try {
+    final List<String> urlsAdjuntos = [];
+    urlsAdjuntos.addAll(_archivosExistentes);
 
-      for (final adj in _adjuntos) {
-        final String url;
-        if (adj.tipo == _TipoAdjunto.pdf) {
-          url = await AuthService().subirArchivoPdf(adj.bytes, adj.nombre);
-        } else {
-          url = await AuthService().subirImagenTarea(adj.bytes);
-        }
-        urlsAdjuntos.add(url);
-      }
-
-      final tarea = Tarea(
-        firestoreId: widget.id,
-        titulo:      _titulo.text.trim(),
-        descripcion: _descripcion.text.trim(),
-        materia:     _materia == 'Otra' && _otraMateria.isNotEmpty
-            ? _otraMateria
-            : _materia,
-        tipo:       _tipo,
-        prioridad:  _prioridad,
-        fechaEntrega: _fecha,
-        horaEntrega:  _hora,
-        archivos:     urlsAdjuntos,
-      );
-
-      if (_esEdicion) {
-        await TareaService().editar(tarea);
+    for (final adj in _adjuntos) {
+      final String url;
+      if (adj.tipo == _TipoAdjunto.pdf) {
+        url = await AuthService().subirArchivoPdf(adj.bytes, adj.nombre);
       } else {
-        await TareaService().crear(tarea);
+        url = await AuthService().subirImagenTarea(adj.bytes);
       }
-
-      if (!mounted) return;
-      setState(() => _guardando = false);
-      await _mostrarExito();
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _guardando = false);
-      _mostrarError('Error: $e');
+      urlsAdjuntos.add(url);
     }
+
+    final tarea = Tarea(
+      firestoreId:  widget.id,
+      titulo:       _titulo.text.trim(),
+      descripcion:  _descripcion.text.trim(),
+      materia:      _materia == 'Otra' && _otraMateria.isNotEmpty
+          ? _otraMateria
+          : _materia,
+      tipo:         _tipo,
+      prioridad:    _prioridad,
+      fechaEntrega: _fecha,
+      horaEntrega:  _hora,
+      archivos:     urlsAdjuntos,
+    );
+
+    if (_esEdicion) {
+      await TareaService().editar(tarea);
+      // En edición el id ya existe en tarea.firestoreId
+      await NotificationService().programarParaTarea(tarea); // ✅
+    } else {
+      final nuevoId = await TareaService().crear(tarea); // ✅ capturamos el ID
+      final tareaConId = tarea.copyWith(firestoreId: nuevoId); // ✅ lo inyectamos
+      await NotificationService().programarParaTarea(tareaConId); // ✅
+    }
+
+    if (!mounted) return;
+    setState(() => _guardando = false);
+    await _mostrarExito();
+  } catch (e) {
+    if (!mounted) return;
+    setState(() => _guardando = false);
+    _mostrarError('Error: $e');
   }
+}
 
   @override
   void dispose() {

@@ -16,10 +16,13 @@ import '../views/universidades/universidad_form_view.dart';
 import '../views/perfil/perfil_info_view.dart';
 import '../views/perfil/cambiar_password_view.dart';
 import '../views/main_shell.dart';
+import '../views/splash/splash_view.dart';
 
 final GoRouter appRouter = GoRouter(
-  initialLocation: '/dashboard',
+  initialLocation: '/splash',
   redirect: (context, state) {
+    if (state.matchedLocation == '/splash') return null;
+
     final loggedIn = FirebaseAuth.instance.currentUser != null;
     final enLogin =
         state.matchedLocation == '/login' ||
@@ -29,6 +32,7 @@ final GoRouter appRouter = GoRouter(
     return null;
   },
   routes: [
+    GoRoute(path: '/splash', builder: (context, state) => const SplashView()),
     GoRoute(path: '/login', builder: (context, state) => const LoginView()),
     GoRoute(path: '/registro', builder: (context, state) => const RegistroView()),
 
