@@ -42,11 +42,18 @@ class _DashboardCalendarioState extends State<DashboardCalendario> {
     super.initState();
     _hoy = DateTime.now();
     _mesActual = DateTime(_hoy.year, _hoy.month);
+    _prePoblarColorCache();
   }
+
+  void _prePoblarColorCache() {
+  for (final tarea in widget.tareas) {
+    _colorParaMateria(tarea.materia, _colorCache);
+  }
+}
 
   List<Tarea> _tareasDelDia(DateTime dia) {
     return widget.tareas.where((t) {
-      final f = t.fechaEntrega;
+      final f = t.fechaHoraEntrega;
       return f.year == dia.year && f.month == dia.month && f.day == dia.day;
     }).toList();
   }
@@ -71,21 +78,31 @@ class _DashboardCalendarioState extends State<DashboardCalendario> {
 
   String get _nombreMes {
     const meses = [
-      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+      'Enero',
+      'Febrero',
+      'Marzo',
+      'Abril',
+      'Mayo',
+      'Junio',
+      'Julio',
+      'Agosto',
+      'Septiembre',
+      'Octubre',
+      'Noviembre',
+      'Diciembre',
     ];
     return '${meses[_mesActual.month - 1]} ${_mesActual.year}';
   }
 
   void _mesSiguiente() => setState(() {
-        _mesActual = DateTime(_mesActual.year, _mesActual.month + 1);
-        _diaSeleccionado = null;
-      });
+    _mesActual = DateTime(_mesActual.year, _mesActual.month + 1);
+    _diaSeleccionado = null;
+  });
 
   void _mesAnterior() => setState(() {
-        _mesActual = DateTime(_mesActual.year, _mesActual.month - 1);
-        _diaSeleccionado = null;
-      });
+    _mesActual = DateTime(_mesActual.year, _mesActual.month - 1);
+    _diaSeleccionado = null;
+  });
 
   void _mostrarSheet(BuildContext context, Tarea tarea) {
     showModalBottomSheet(
@@ -97,16 +114,16 @@ class _DashboardCalendarioState extends State<DashboardCalendario> {
   }
 
   void _mostrarListaTareas(
-      BuildContext context, DateTime dia, List<Tarea> tareas) {
+    BuildContext context,
+    DateTime dia,
+    List<Tarea> tareas,
+  ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _ListaTareasSheet(
-        dia: dia,
-        tareas: tareas,
-        colorCache: _colorCache,
-      ),
+      builder: (_) =>
+          _ListaTareasSheet(dia: dia, tareas: tareas, colorCache: _colorCache),
     );
   }
 
@@ -151,7 +168,9 @@ class _DashboardCalendarioState extends State<DashboardCalendario> {
               // ── Cabecera mes ──────────────────────────────────────────
               Padding(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 14),
+                  horizontal: 16,
+                  vertical: 14,
+                ),
                 child: Row(
                   children: [
                     _NavBtn(icon: Icons.chevron_left, onTap: _mesAnterior),
@@ -175,20 +194,22 @@ class _DashboardCalendarioState extends State<DashboardCalendario> {
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Row(
                   children: ['L', 'M', 'X', 'J', 'V', 'S', 'D']
-                      .map((d) => Expanded(
-                            child: Center(
-                              child: Text(
-                                d,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: d == 'D'
-                                      ? AppTheme.danger
-                                      : Colors.grey.shade500,
-                                ),
+                      .map(
+                        (d) => Expanded(
+                          child: Center(
+                            child: Text(
+                              d,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: d == 'D'
+                                    ? AppTheme.danger
+                                    : Colors.grey.shade500,
                               ),
                             ),
-                          ))
+                          ),
+                        ),
+                      )
                       .toList(),
                 ),
               ),
@@ -196,18 +217,18 @@ class _DashboardCalendarioState extends State<DashboardCalendario> {
 
               // ── Cuadrícula ───────────────────────────────────────────
               Padding(
-                padding:
-                    const EdgeInsets.only(left: 8, right: 8, bottom: 12),
+                padding: const EdgeInsets.only(left: 8, right: 8, bottom: 12),
                 child: _buildCuadricula(context),
               ),
 
               // ── Leyenda ──────────────────────────────────────────────
               if (_colorCache.isNotEmpty) ...[
                 Divider(
-                    height: 1,
-                    color: isDark
-                        ? const Color(0xFF2A2D45)
-                        : Colors.grey.shade200),
+                  height: 1,
+                  color: isDark
+                      ? const Color(0xFF2A2D45)
+                      : Colors.grey.shade200,
+                ),
                 _LeyendaMaterias(colorCache: _colorCache),
               ],
             ],
@@ -257,15 +278,14 @@ class _DashboardCalendarioState extends State<DashboardCalendario> {
               color: esHoy
                   ? primary.withOpacity(0.15)
                   : esSel
-                      ? primary.withOpacity(0.08)
-                      : Colors.transparent,
+                  ? primary.withOpacity(0.08)
+                  : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
               border: esHoy
                   ? Border.all(color: primary, width: 1.5)
                   : esSel
-                      ? Border.all(
-                          color: primary.withOpacity(0.4), width: 1)
-                      : null,
+                  ? Border.all(color: primary.withOpacity(0.4), width: 1)
+                  : null,
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
@@ -275,26 +295,21 @@ class _DashboardCalendarioState extends State<DashboardCalendario> {
                   '${dia.day}',
                   style: TextStyle(
                     fontSize: 12,
-                    fontWeight:
-                        esHoy ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: esHoy ? FontWeight.bold : FontWeight.normal,
                     color: esHoy
                         ? primary
                         : esMes
-                            ? (isDark
-                                ? const Color(0xFFF0F0FF)
-                                : Colors.black87)
-                            : (isDark
-                                ? const Color(0xFF3A3D55)
-                                : Colors.grey.shade300),
+                        ? (isDark ? const Color(0xFFF0F0FF) : Colors.black87)
+                        : (isDark
+                              ? const Color(0xFF3A3D55)
+                              : Colors.grey.shade300),
                   ),
                 ),
                 const SizedBox(height: 2),
                 ...tareas.take(3).map((t) {
-                  final color =
-                      _colorParaMateria(t.materia, _colorCache);
+                  final color = _colorParaMateria(t.materia, _colorCache);
                   return Container(
-                    margin: const EdgeInsets.only(
-                        bottom: 2, left: 2, right: 2),
+                    margin: const EdgeInsets.only(bottom: 2, left: 2, right: 2),
                     height: 5,
                     decoration: BoxDecoration(
                       color: color,
@@ -378,9 +393,7 @@ class _LeyendaMaterias extends StatelessWidget {
                 e.key,
                 style: TextStyle(
                   fontSize: 11,
-                  color: isDark
-                      ? const Color(0xFFB0B0CC)
-                      : Colors.black87,
+                  color: isDark ? const Color(0xFFB0B0CC) : Colors.black87,
                 ),
               ),
             ],
@@ -410,11 +423,20 @@ class _ListaTareasSheet extends StatelessWidget {
     final textColor = isDark ? const Color(0xFFF0F0FF) : Colors.black87;
 
     const meses = [
-      'ene', 'feb', 'mar', 'abr', 'may', 'jun',
-      'jul', 'ago', 'sep', 'oct', 'nov', 'dic',
+      'ene',
+      'feb',
+      'mar',
+      'abr',
+      'may',
+      'jun',
+      'jul',
+      'ago',
+      'sep',
+      'oct',
+      'nov',
+      'dic',
     ];
-    final titulo =
-        '${dia.day} de ${meses[dia.month - 1]}. de ${dia.year}';
+    final titulo = '${dia.day} de ${meses[dia.month - 1]}. de ${dia.year}';
 
     return DraggableScrollableSheet(
       initialChildSize: 0.45,
@@ -423,37 +445,41 @@ class _ListaTareasSheet extends StatelessWidget {
       builder: (_, controller) => Container(
         decoration: BoxDecoration(
           color: sheetColor,
-          borderRadius:
-              const BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
           children: [
             const _SheetHandle(),
             Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 20, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
                 children: [
-                  Icon(Icons.calendar_today,
-                      size: 18, color: Colors.grey.shade500),
+                  Icon(
+                    Icons.calendar_today,
+                    size: 18,
+                    color: Colors.grey.shade500,
+                  ),
                   const SizedBox(width: 8),
-                  Text(titulo,
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                          color: textColor)),
+                  Text(
+                    titulo,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      color: textColor,
+                    ),
+                  ),
                   const Spacer(),
-                  Text('${tareas.length} tareas',
-                      style: const TextStyle(
-                          fontSize: 12, color: Colors.grey)),
+                  Text(
+                    '${tareas.length} tareas',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
                 ],
               ),
             ),
             Divider(
-                height: 1,
-                color: isDark
-                    ? const Color(0xFF2A2D45)
-                    : Colors.grey.shade200),
+              height: 1,
+              color: isDark ? const Color(0xFF2A2D45) : Colors.grey.shade200,
+            ),
             Expanded(
               child: ListView.separated(
                 controller: controller,
@@ -462,8 +488,7 @@ class _ListaTareasSheet extends StatelessWidget {
                 separatorBuilder: (_, __) => const SizedBox(height: 8),
                 itemBuilder: (ctx, i) {
                   final t = tareas[i];
-                  final color =
-                      _colorParaMateria(t.materia, colorCache);
+                  final color = _colorParaMateria(t.materia, colorCache);
                   return GestureDetector(
                     onTap: () {
                       Navigator.pop(ctx);
@@ -471,10 +496,8 @@ class _ListaTareasSheet extends StatelessWidget {
                         context: context,
                         isScrollControlled: true,
                         backgroundColor: Colors.transparent,
-                        builder: (_) => _TareaSheet(
-                          tarea: t,
-                          colorCache: colorCache,
-                        ),
+                        builder: (_) =>
+                            _TareaSheet(tarea: t, colorCache: colorCache),
                       );
                     },
                     child: Container(
@@ -482,8 +505,7 @@ class _ListaTareasSheet extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: color.withOpacity(0.08),
                         borderRadius: BorderRadius.circular(12),
-                        border:
-                            Border.all(color: color.withOpacity(0.3)),
+                        border: Border.all(color: color.withOpacity(0.3)),
                       ),
                       child: Row(
                         children: [
@@ -498,22 +520,28 @@ class _ListaTareasSheet extends StatelessWidget {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(t.titulo,
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 13,
-                                        color: textColor)),
-                                Text(t.materia,
-                                    style: TextStyle(
-                                        fontSize: 11, color: color)),
+                                Text(
+                                  t.titulo,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                    color: textColor,
+                                  ),
+                                ),
+                                Text(
+                                  t.materia,
+                                  style: TextStyle(fontSize: 11, color: color),
+                                ),
                               ],
                             ),
                           ),
-                          Icon(Icons.chevron_right,
-                              color: Colors.grey.shade500, size: 18),
+                          Icon(
+                            Icons.chevron_right,
+                            color: Colors.grey.shade500,
+                            size: 18,
+                          ),
                         ],
                       ),
                     ),
@@ -536,28 +564,38 @@ class _TareaSheet extends StatelessWidget {
 
   String get _estadoTexto {
     if (tarea.completada) return 'Completada';
-    if (tarea.fechaEntrega.isBefore(DateTime.now())) return 'Vencida';
+    if (tarea.fechaHoraEntrega.isBefore(DateTime.now())) return 'Vencida';
     return 'Pendiente';
   }
 
   Color get _estadoColor {
     if (tarea.completada) return Colors.green;
-    if (tarea.fechaEntrega.isBefore(DateTime.now()))
+    if (tarea.fechaHoraEntrega.isBefore(DateTime.now()))
       return const Color(0xFFD63939);
     return const Color(0xFFE67700);
   }
 
   IconData get _estadoIcono {
     if (tarea.completada) return Icons.check_circle;
-    if (tarea.fechaEntrega.isBefore(DateTime.now()))
+    if (tarea.fechaHoraEntrega.isBefore(DateTime.now()))
       return Icons.warning_amber_rounded;
     return Icons.pending_actions;
   }
 
   String _formatearFecha(DateTime d) {
     const meses = [
-      'ene', 'feb', 'mar', 'abr', 'may', 'jun',
-      'jul', 'ago', 'sep', 'oct', 'nov', 'dic',
+      'ene',
+      'feb',
+      'mar',
+      'abr',
+      'may',
+      'jun',
+      'jul',
+      'ago',
+      'sep',
+      'oct',
+      'nov',
+      'dic',
     ];
     return '${d.day} de ${meses[d.month - 1]}. de ${d.year}';
   }
@@ -572,7 +610,9 @@ class _TareaSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final sheetColor = isDark ? const Color(0xFF1A1D2E) : Colors.white;
-    final textColor = isDark ? const Color(0xFFF0F0FF) : const Color(0xFF1A1A2E);
+    final textColor = isDark
+        ? const Color(0xFFF0F0FF)
+        : const Color(0xFF1A1A2E);
     final subColor = isDark ? const Color(0xFFB0B0CC) : const Color(0xFF444466);
     final chipBg = isDark ? const Color(0xFF242840) : Colors.grey.shade50;
     final chipBorder = isDark ? const Color(0xFF2A2D45) : Colors.grey.shade200;
@@ -585,8 +625,7 @@ class _TareaSheet extends StatelessWidget {
       builder: (_, controller) => Container(
         decoration: BoxDecoration(
           color: sheetColor,
-          borderRadius:
-              const BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: SingleChildScrollView(
           controller: controller,
@@ -601,25 +640,33 @@ class _TareaSheet extends StatelessWidget {
                 // Chip materia
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: color.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: color.withOpacity(0.4)),
                   ),
-                  child: Text(tarea.materia,
-                      style: TextStyle(
-                          fontSize: 12,
-                          color: color,
-                          fontWeight: FontWeight.w600)),
+                  child: Text(
+                    tarea.materia,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: color,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 10),
 
-                Text(tarea.titulo,
-                    style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: textColor)),
+                Text(
+                  tarea.titulo,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
+                ),
                 const SizedBox(height: 16),
 
                 _InfoRow(
@@ -650,11 +697,14 @@ class _TareaSheet extends StatelessWidget {
 
                 if (tarea.descripcion.isNotEmpty) ...[
                   const SizedBox(height: 16),
-                  Text('Descripción',
-                      style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
-                          color: textColor)),
+                  Text(
+                    'Descripción',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                      color: textColor,
+                    ),
+                  ),
                   const SizedBox(height: 6),
                   Container(
                     width: double.infinity,
@@ -664,9 +714,14 @@ class _TareaSheet extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: chipBorder),
                     ),
-                    child: Text(tarea.descripcion,
-                        style: TextStyle(
-                            fontSize: 13, color: subColor, height: 1.5)),
+                    child: Text(
+                      tarea.descripcion,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: subColor,
+                        height: 1.5,
+                      ),
+                    ),
                   ),
                 ],
 
@@ -706,12 +761,14 @@ class _TareaSheet extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryOf(context),
                       foregroundColor: Colors.white,
-                      padding:
-                          const EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       textStyle: const TextStyle(
-                          fontWeight: FontWeight.w600, fontSize: 14),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
                 ),
@@ -769,17 +826,21 @@ class _InfoRow extends StatelessWidget {
       children: [
         Icon(icono, size: 18, color: color),
         const SizedBox(width: 10),
-        Text('$label: ',
-            style: TextStyle(
-                fontSize: 13,
-                color: isDark ? Colors.grey.shade500 : Colors.grey)),
+        Text(
+          '$label: ',
+          style: TextStyle(
+            fontSize: 13,
+            color: isDark ? Colors.grey.shade500 : Colors.grey,
+          ),
+        ),
         Expanded(
           child: Text(
             valor,
             style: TextStyle(
               fontSize: 13,
               fontWeight: bold ? FontWeight.bold : FontWeight.w500,
-              color: valorColor ??
+              color:
+                  valorColor ??
                   (isDark ? const Color(0xFFF0F0FF) : Colors.black87),
             ),
           ),
@@ -805,10 +866,8 @@ class _ChipInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bg = isDark ? const Color(0xFF242840) : Colors.grey.shade50;
-    final border =
-        isDark ? const Color(0xFF2A2D45) : Colors.grey.shade200;
-    final textColor =
-        isDark ? const Color(0xFFF0F0FF) : Colors.black87;
+    final border = isDark ? const Color(0xFF2A2D45) : Colors.grey.shade200;
+    final textColor = isDark ? const Color(0xFFF0F0FF) : Colors.black87;
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -819,21 +878,27 @@ class _ChipInfo extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(icono,
-              size: 16,
-              color: isDark ? Colors.grey.shade400 : Colors.grey.shade500),
+          Icon(
+            icono,
+            size: 16,
+            color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
+          ),
           const SizedBox(width: 8),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label,
-                  style: const TextStyle(
-                      fontSize: 10, color: Colors.grey)),
-              Text(valor,
-                  style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: textColor)),
+              Text(
+                label,
+                style: const TextStyle(fontSize: 10, color: Colors.grey),
+              ),
+              Text(
+                valor,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: textColor,
+                ),
+              ),
             ],
           ),
         ],

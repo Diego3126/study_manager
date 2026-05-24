@@ -25,7 +25,6 @@ class _RegistroViewState extends State<RegistroView> {
   bool   _verConfirm  = false;
   String? _error;
 
-  // Universidad
   List<Universidad> _universidades  = [];
   Universidad?      _uniSeleccionada;
   bool              _cargandoUnis   = true;
@@ -49,32 +48,25 @@ class _RegistroViewState extends State<RegistroView> {
     }
   }
 
-  // ── Lógica de registro (igual que antes) ───────────────────────────────────
   Future<void> _registrar() async {
-  if (!_formKey.currentState!.validate()) return;
-  setState(() { _cargando = true; _error = null; });
-  try {
-    await AuthService().registrar(
-      nombre:      _nombre.text.trim(),
-      email:       _email.text.trim(),
-      password:    _password.text.trim(),
-      universidad: _uniSeleccionada?.nombre ?? '',
-    );
-
-    // Enviar correo de verificación
-    await AuthService().enviarVerificacionEmail();
-
-    if (!mounted) return;
-
-    // Mostrar sheet de verificación en lugar de ir directo al home
-    await _mostrarSheetVerificacion();
-
-  } on Exception catch (e) {
-    setState(() => _error = _mensajeError(e.toString()));
-  } finally {
-    if (mounted) setState(() => _cargando = false);
+    if (!_formKey.currentState!.validate()) return;
+    setState(() { _cargando = true; _error = null; });
+    try {
+      await AuthService().registrar(
+        nombre:      _nombre.text.trim(),
+        email:       _email.text.trim(),
+        password:    _password.text.trim(),
+        universidad: _uniSeleccionada?.nombre ?? '',
+      );
+      await AuthService().enviarVerificacionEmail();
+      if (!mounted) return;
+      await _mostrarSheetVerificacion();
+    } on Exception catch (e) {
+      setState(() => _error = _mensajeError(e.toString()));
+    } finally {
+      if (mounted) setState(() => _cargando = false);
+    }
   }
-}
 
   Future<void> _mostrarSheetVerificacion() async {
     await showModalBottomSheet(
@@ -82,7 +74,7 @@ class _RegistroViewState extends State<RegistroView> {
       backgroundColor:    Colors.transparent,
       barrierColor:       Colors.black.withOpacity(0.6),
       isDismissible:      false,
-      enableDrag: false,
+      enableDrag:         false,
       isScrollControlled: true,
       builder: (_) => _SheetVerificacionEmail(
         email: _email.text.trim(),
@@ -111,10 +103,12 @@ class _RegistroViewState extends State<RegistroView> {
     super.dispose();
   }
 
-  // ── UI ─────────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    // ── Referencias al tema ────────────────────────────────────────────────
+    final cs      = Theme.of(context).colorScheme;
+    final primary = AppTheme.primaryOf(context);
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -122,11 +116,8 @@ class _RegistroViewState extends State<RegistroView> {
         fit: StackFit.expand,
         children: [
 
-          // 1. Imagen de fondo (la misma que el login)
-          Image.asset(
-            'assets/images/login_bg.jpg',
-            fit: BoxFit.cover,
-          ),
+          // 1. Imagen de fondo
+          Image.asset('assets/images/login_bg.jpg', fit: BoxFit.cover),
 
           // 2. Capa oscura
           Container(color: Colors.black.withOpacity(0.40)),
@@ -137,7 +128,7 @@ class _RegistroViewState extends State<RegistroView> {
             child: Container(color: Colors.transparent),
           ),
 
-          // 4. Contenido con animación al subir teclado
+          // 4. Contenido
           AnimatedPadding(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeOut,
@@ -147,18 +138,16 @@ class _RegistroViewState extends State<RegistroView> {
                 children: [
                   const Spacer(),
 
-                  // ── Tarjeta blanca inferior ───────────────────────────
+                  // ── Tarjeta inferior ──────────────────────────────
                   Container(
                     width: double.infinity,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.only(
+                    decoration: BoxDecoration(
+                      color: cs.surface, // ✅ era Colors.white
+                      borderRadius: const BorderRadius.only(
                         topLeft:  Radius.circular(32),
                         topRight: Radius.circular(32),
                       ),
                     ),
-                    // usamos SingleChildScrollView para que el contenido
-                    // sea scrolleable si el form es muy largo
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(28, 36, 28, 28),
                       child: Form(
@@ -168,7 +157,7 @@ class _RegistroViewState extends State<RegistroView> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
 
-                            // ── Encabezado ──────────────────────────────
+                            // ── Encabezado ────────────────────────────
                             Center(
                               child: Column(
                                 children: [
@@ -176,31 +165,31 @@ class _RegistroViewState extends State<RegistroView> {
                                     width: 64,
                                     height: 64,
                                     decoration: BoxDecoration(
-                                      color: AppTheme.primary.withOpacity(0.12),
+                                      color: primary.withOpacity(0.12),
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                     child: Icon(
                                       Icons.person_add_rounded,
-                                      color: AppTheme.primary,
+                                      color: primary,
                                       size: 34,
                                     ),
                                   ),
                                   const SizedBox(height: 14),
-                                  const Text(
+                                  Text(
                                     'Únete a StudyManager',
                                     style: TextStyle(
-                                      fontSize: 22,
+                                      fontSize:   22,
                                       fontWeight: FontWeight.bold,
-                                      color: Color(0xFF1A1A2E),
+                                      color:      cs.onSurface, // ✅ era 0xFF1A1A2E
                                       letterSpacing: -0.5,
                                     ),
                                   ),
                                   const SizedBox(height: 6),
-                                  const Text(
+                                  Text(
                                     'Crea tu cuenta para empezar',
                                     style: TextStyle(
                                       fontSize: 13,
-                                      color: Color(0xFF8A8A9A),
+                                      color: cs.onSurface.withOpacity(0.5), // ✅ era 0xFF8A8A9A
                                     ),
                                   ),
                                 ],
@@ -209,23 +198,26 @@ class _RegistroViewState extends State<RegistroView> {
 
                             const SizedBox(height: 28),
 
-                            const Text(
+                            Text(
                               'Crear cuenta',
                               style: TextStyle(
-                                fontSize: 18,
+                                fontSize:   18,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF1A1A2E),
+                                color:      cs.onSurface, // ✅ era 0xFF1A1A2E
                               ),
                             ),
 
                             const SizedBox(height: 18),
 
-                            // ── Nombre ──────────────────────────────────
+                            // ── Nombre ────────────────────────────────
                             TextFormField(
                               controller: _nombre,
-                              style: const TextStyle(
-                                  fontSize: 15, color: Color(0xFF1A1A2E)),
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: cs.onSurface, // ✅ era 0xFF1A1A2E
+                              ),
                               decoration: _inputDecoration(
+                                context: context,
                                 hint: 'Nombre completo',
                                 icon: Icons.person_outline_rounded,
                               ),
@@ -236,13 +228,16 @@ class _RegistroViewState extends State<RegistroView> {
 
                             const SizedBox(height: 12),
 
-                            // ── Email ────────────────────────────────────
+                            // ── Email ──────────────────────────────────
                             TextFormField(
                               controller: _email,
                               keyboardType: TextInputType.emailAddress,
-                              style: const TextStyle(
-                                  fontSize: 15, color: Color(0xFF1A1A2E)),
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: cs.onSurface, // ✅
+                              ),
                               decoration: _inputDecoration(
+                                context: context,
                                 hint: 'Correo electrónico',
                                 icon: Icons.mail_outline_rounded,
                               ),
@@ -253,13 +248,16 @@ class _RegistroViewState extends State<RegistroView> {
 
                             const SizedBox(height: 12),
 
-                            // ── Contraseña ───────────────────────────────
+                            // ── Contraseña ─────────────────────────────
                             TextFormField(
                               controller: _password,
                               obscureText: !_verPass,
-                              style: const TextStyle(
-                                  fontSize: 15, color: Color(0xFF1A1A2E)),
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: cs.onSurface, // ✅
+                              ),
                               decoration: _inputDecoration(
+                                context: context,
                                 hint: 'Contraseña (mín. 6 caracteres)',
                                 icon: Icons.lock_outline_rounded,
                                 suffix: IconButton(
@@ -267,7 +265,7 @@ class _RegistroViewState extends State<RegistroView> {
                                     _verPass
                                         ? Icons.visibility_off_outlined
                                         : Icons.visibility_outlined,
-                                    color: const Color(0xFF8A8A9A),
+                                    color: cs.onSurface.withOpacity(0.4), // ✅ era 0xFF8A8A9A
                                     size: 20,
                                   ),
                                   onPressed: () =>
@@ -284,13 +282,16 @@ class _RegistroViewState extends State<RegistroView> {
 
                             const SizedBox(height: 12),
 
-                            // ── Confirmar contraseña ─────────────────────
+                            // ── Confirmar contraseña ───────────────────
                             TextFormField(
                               controller: _confirm,
                               obscureText: !_verConfirm,
-                              style: const TextStyle(
-                                  fontSize: 15, color: Color(0xFF1A1A2E)),
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: cs.onSurface, // ✅
+                              ),
                               decoration: _inputDecoration(
+                                context: context,
                                 hint: 'Confirmar contraseña',
                                 icon: Icons.lock_outline_rounded,
                                 suffix: IconButton(
@@ -298,7 +299,7 @@ class _RegistroViewState extends State<RegistroView> {
                                     _verConfirm
                                         ? Icons.visibility_off_outlined
                                         : Icons.visibility_outlined,
-                                    color: const Color(0xFF8A8A9A),
+                                    color: cs.onSurface.withOpacity(0.4), // ✅
                                     size: 20,
                                   ),
                                   onPressed: () =>
@@ -316,35 +317,39 @@ class _RegistroViewState extends State<RegistroView> {
 
                             const SizedBox(height: 12),
 
-                            // ── Selector de universidad ──────────────────
+                            // ── Selector de universidad ────────────────
                             if (_cargandoUnis)
                               const Center(
                                 child: Padding(
                                   padding: EdgeInsets.symmetric(vertical: 8),
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 2),
+                                  child: CircularProgressIndicator(strokeWidth: 2),
                                 ),
                               )
                             else if (_universidades.isEmpty)
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: Colors.orange.shade50,
+                                  color: cs.tertiaryContainer, // ✅ era Colors.orange.shade50
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                      color: Colors.orange.shade200),
+                                    color: AppTheme.warning.withOpacity(0.4), // ✅ era Colors.orange.shade200
+                                  ),
                                 ),
                                 child: Row(
                                   children: [
-                                    const Icon(Icons.info_outline,
-                                        color: Colors.orange, size: 18),
+                                    Icon(
+                                      Icons.info_outline,
+                                      color: AppTheme.warning, // ✅ era Colors.orange
+                                      size: 18,
+                                    ),
                                     const SizedBox(width: 8),
-                                    const Expanded(
+                                    Expanded(
                                       child: Text(
                                         'No hay universidades registradas. Puedes agregarlas desde el menú principal.',
                                         style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.orange),
+                                          fontSize: 12,
+                                          color: AppTheme.warning, // ✅ era Colors.orange
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -354,47 +359,58 @@ class _RegistroViewState extends State<RegistroView> {
                               DropdownButtonFormField<Universidad>(
                                 value: _uniSeleccionada,
                                 decoration: _inputDecoration(
+                                  context: context,
                                   hint: 'Selecciona tu universidad',
                                   icon: Icons.account_balance_outlined,
                                 ),
-                                hint: const Text(
+                                hint: Text(
                                   'Universidad (opcional)',
                                   style: TextStyle(
-                                      color: Color(0xFFAAAAAA), fontSize: 15),
+                                    color: cs.onSurface.withOpacity(0.35), // ✅ era 0xFFAAAAAA
+                                    fontSize: 15,
+                                  ),
                                 ),
                                 isExpanded: true,
                                 items: _universidades
                                     .map((u) => DropdownMenuItem(
                                           value: u,
-                                          child: Text(u.nombre,
-                                              overflow: TextOverflow.ellipsis),
+                                          child: Text(
+                                            u.nombre,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
                                         ))
                                     .toList(),
                                 onChanged: (u) =>
                                     setState(() => _uniSeleccionada = u),
                               ),
 
-                            // ── Mensaje de error ─────────────────────────
+                            // ── Error ──────────────────────────────────
                             if (_error != null) ...[
                               const SizedBox(height: 14),
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: Colors.red.shade50,
+                                  color: cs.errorContainer, // ✅ era Colors.red.shade50
                                   borderRadius: BorderRadius.circular(8),
-                                  border:
-                                      Border.all(color: Colors.red.shade200),
+                                  border: Border.all(
+                                    color: cs.error.withOpacity(0.4), // ✅
+                                  ),
                                 ),
                                 child: Row(
                                   children: [
-                                    const Icon(Icons.error_outline,
-                                        color: Colors.red, size: 18),
+                                    Icon(
+                                      Icons.error_outline,
+                                      color: cs.error, // ✅ era Colors.red
+                                      size: 18,
+                                    ),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
                                         _error!,
-                                        style: const TextStyle(
-                                            color: Colors.red, fontSize: 13),
+                                        style: TextStyle(
+                                          color: cs.error, // ✅
+                                          fontSize: 13,
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -404,13 +420,13 @@ class _RegistroViewState extends State<RegistroView> {
 
                             const SizedBox(height: 24),
 
-                            // ── Botón crear cuenta ───────────────────────
+                            // ── Botón crear cuenta ─────────────────────
                             SizedBox(
                               height: 52,
                               child: ElevatedButton(
                                 onPressed: _cargando ? null : _registrar,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppTheme.primary,
+                                  backgroundColor: primary,
                                   foregroundColor: Colors.white,
                                   elevation: 0,
                                   shape: RoundedRectangleBorder(
@@ -422,13 +438,14 @@ class _RegistroViewState extends State<RegistroView> {
                                         width: 20,
                                         height: 20,
                                         child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            color: Colors.white),
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
                                       )
                                     : const Text(
                                         'Crear cuenta',
                                         style: TextStyle(
-                                          fontSize: 16,
+                                          fontSize:   16,
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
@@ -437,23 +454,24 @@ class _RegistroViewState extends State<RegistroView> {
 
                             const SizedBox(height: 20),
 
-                            // ── ¿Ya tienes cuenta? ───────────────────────
+                            // ── ¿Ya tienes cuenta? ─────────────────────
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Text(
+                                Text(
                                   '¿Ya tienes cuenta? ',
                                   style: TextStyle(
-                                      fontSize: 14,
-                                      color: Color(0xFF5A5A6A)),
+                                    fontSize: 14,
+                                    color: cs.onSurface.withOpacity(0.6), // ✅ era 0xFF5A5A6A
+                                  ),
                                 ),
                                 GestureDetector(
                                   onTap: () => context.pop(),
                                   child: Text(
                                     'Inicia sesión',
                                     style: TextStyle(
-                                      fontSize: 14,
-                                      color: AppTheme.primary,
+                                      fontSize:   14,
+                                      color:      primary,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -476,44 +494,54 @@ class _RegistroViewState extends State<RegistroView> {
     );
   }
 
-  // ── Helper: decoración reutilizable para los campos ───────────────────────
+  // ── Recibe context para acceder al tema ───────────────────────────────────
   InputDecoration _inputDecoration({
+    required BuildContext context, // ✅ se agregó context
     required String hint,
     required IconData icon,
     Widget? suffix,
   }) {
+    final cs      = Theme.of(context).colorScheme;
+    final primary = AppTheme.primaryOf(context);
+
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: Color(0xFFAAAAAA), fontSize: 15),
-      prefixIcon: Icon(icon, color: const Color(0xFF8A8A9A), size: 20),
+      hintStyle: TextStyle(
+        color: cs.onSurface.withOpacity(0.35), // ✅ era 0xFFAAAAAA
+        fontSize: 15,
+      ),
+      prefixIcon: Icon(icon, color: cs.onSurface.withOpacity(0.4), size: 20), // ✅
       suffixIcon: suffix,
       filled: true,
-      fillColor: const Color(0xFFF7F8FA),
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      fillColor: cs.onSurface.withOpacity(0.05), // ✅ era 0xFFF7F8FA
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFE8E8F0), width: 1),
+        borderSide: BorderSide(color: cs.outlineVariant, width: 1), // ✅
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFE8E8F0), width: 1),
+        borderSide: BorderSide(color: cs.outlineVariant, width: 1), // ✅
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: AppTheme.primary, width: 1.5),
+        borderSide: BorderSide(color: primary, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.red, width: 1),
+        borderSide: BorderSide(color: cs.error, width: 1), // ✅
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.red, width: 1.5),
+        borderSide: BorderSide(color: cs.error, width: 1.5), // ✅
       ),
     );
   }
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Sheet: Verificación de email
+// ═══════════════════════════════════════════════════════════════════════════════
 
 class _SheetVerificacionEmail extends StatefulWidget {
   final String       email;
@@ -532,8 +560,8 @@ class _SheetVerificacionEmail extends StatefulWidget {
 }
 
 class _SheetVerificacionEmailState extends State<_SheetVerificacionEmail> {
-  bool _verificando = false;
-  bool _reenviando  = false;
+  bool    _verificando = false;
+  bool    _reenviando  = false;
   String? _error;
 
   Future<void> _verificar() async {
@@ -570,21 +598,25 @@ class _SheetVerificacionEmailState extends State<_SheetVerificacionEmail> {
 
   @override
   Widget build(BuildContext context) {
+    final cs      = Theme.of(context).colorScheme;
+    final primary = AppTheme.primaryOf(context);
+
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 40),
-      decoration: const BoxDecoration(
-        color:        Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      decoration: BoxDecoration(
+        color:        cs.surface, // ✅ era Colors.white
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+
           // Pastilla
           Container(
-            width:  40, height: 4,
+            width: 40, height: 4,
             margin: const EdgeInsets.only(bottom: 28),
             decoration: BoxDecoration(
-              color:        Colors.grey.shade300,
+              color:        cs.onSurface.withOpacity(0.2), // ✅ era Colors.grey.shade300
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -593,7 +625,7 @@ class _SheetVerificacionEmailState extends State<_SheetVerificacionEmail> {
           Container(
             width: 64, height: 64,
             decoration: BoxDecoration(
-              color:        AppTheme.primary,
+              color:        primary,
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
@@ -605,12 +637,12 @@ class _SheetVerificacionEmailState extends State<_SheetVerificacionEmail> {
           const SizedBox(height: 24),
 
           // Título
-          const Text(
+          Text(
             'Verifica tu correo',
             style: TextStyle(
               fontSize:   20,
               fontWeight: FontWeight.bold,
-              color:      Color(0xFF1A1A2E),
+              color:      cs.onSurface, // ✅ era 0xFF1A1A2E
             ),
           ),
           const SizedBox(height: 12),
@@ -621,7 +653,7 @@ class _SheetVerificacionEmailState extends State<_SheetVerificacionEmail> {
             text: TextSpan(
               style: TextStyle(
                 fontSize: 13,
-                color:    Colors.grey.shade500,
+                color:    cs.onSurface.withOpacity(0.5), // ✅ era Colors.grey.shade500
                 height:   1.5,
               ),
               children: [
@@ -631,7 +663,7 @@ class _SheetVerificacionEmailState extends State<_SheetVerificacionEmail> {
                 TextSpan(
                   text: widget.email,
                   style: TextStyle(
-                    color:      AppTheme.primary,
+                    color:      primary, // ✅ era AppTheme.primary (fijo)
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -641,7 +673,6 @@ class _SheetVerificacionEmailState extends State<_SheetVerificacionEmail> {
               ],
             ),
           ),
-          const SizedBox(height: 8),
 
           // Error
           if (_error != null) ...[
@@ -649,20 +680,18 @@ class _SheetVerificacionEmailState extends State<_SheetVerificacionEmail> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color:        Colors.red.shade50,
+                color:        cs.errorContainer, // ✅ era Colors.red.shade50
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.red.shade200),
+                border: Border.all(color: cs.error.withOpacity(0.4)), // ✅
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.error_outline,
-                      color: Colors.red, size: 18),
+                  Icon(Icons.error_outline, color: cs.error, size: 18), // ✅
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       _error!,
-                      style: const TextStyle(
-                          color: Colors.red, fontSize: 13),
+                      style: TextStyle(color: cs.error, fontSize: 13), // ✅
                     ),
                   ),
                 ],
@@ -678,7 +707,7 @@ class _SheetVerificacionEmailState extends State<_SheetVerificacionEmail> {
             child: ElevatedButton(
               onPressed: _verificando ? null : _verificar,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primary,
+                backgroundColor: primary,
                 foregroundColor: Colors.white,
                 elevation:       0,
                 shape: RoundedRectangleBorder(
@@ -689,7 +718,9 @@ class _SheetVerificacionEmailState extends State<_SheetVerificacionEmail> {
                   ? const SizedBox(
                       width: 20, height: 20,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white),
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
                     )
                   : const Text(
                       'Ya verifiqué mi correo',
@@ -708,8 +739,8 @@ class _SheetVerificacionEmailState extends State<_SheetVerificacionEmail> {
             child: OutlinedButton(
               onPressed: _reenviando ? null : _reenviar,
               style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF1A1A2E),
-                side: BorderSide(color: Colors.grey.shade300),
+                foregroundColor: cs.onSurface, // ✅ era 0xFF1A1A2E
+                side: BorderSide(color: cs.outline), // ✅ era Colors.grey.shade300
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),
@@ -719,7 +750,7 @@ class _SheetVerificacionEmailState extends State<_SheetVerificacionEmail> {
                       width: 20, height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: AppTheme.primary,
+                        color: primary, // ✅ era AppTheme.primary (fijo)
                       ),
                     )
                   : const Text(

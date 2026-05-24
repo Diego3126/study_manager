@@ -31,7 +31,6 @@ class _LoginViewState extends State<LoginView> {
         email: _email.text.trim(),
         password: _password.text.trim(),
       );
-      // Guarda si el usuario quiere ser recordado
       await AuthService().guardarPreferenciaRecordar(_recuerdar);
       if (!mounted) return;
       context.go('/dashboard');
@@ -74,6 +73,9 @@ class _LoginViewState extends State<LoginView> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    // ── Referencias al tema ──────────────────────────────────────────────────
+    final cs = Theme.of(context).colorScheme;
+    final primary = AppTheme.primaryOf(context);
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -102,12 +104,12 @@ class _LoginViewState extends State<LoginView> {
                 children: [
                   const Spacer(),
 
-                  // ── Tarjeta blanca ────────────────────────────────
+                  // ── Tarjeta ───────────────────────────────────────
                   Container(
                     width: double.infinity,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.only(
+                    decoration: BoxDecoration(
+                      color: cs.surface, // ✅ era Colors.white
+                      borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(32),
                         topRight: Radius.circular(32),
                       ),
@@ -127,31 +129,31 @@ class _LoginViewState extends State<LoginView> {
                                   width: 64,
                                   height: 64,
                                   decoration: BoxDecoration(
-                                    color: AppTheme.primary.withOpacity(0.12),
+                                    color: primary.withOpacity(0.12),
                                     borderRadius: BorderRadius.circular(16),
                                   ),
                                   child: Icon(
                                     Icons.menu_book_rounded,
-                                    color: AppTheme.primary,
+                                    color: primary,
                                     size: 36,
                                   ),
                                 ),
                                 const SizedBox(height: 14),
-                                const Text(
+                                Text(
                                   ' Bienvenido a\nStudyManager',
                                   style: TextStyle(
                                     fontSize: 26,
                                     fontWeight: FontWeight.bold,
-                                    color: Color(0xFF1A1A2E),
+                                    color: cs.onSurface, // ✅ era 0xFF1A1A2E
                                     letterSpacing: -0.5,
                                   ),
                                 ),
                                 const SizedBox(height: 6),
-                                const Text(
+                                Text(
                                   'Tu agenda académica inteligente',
                                   style: TextStyle(
                                     fontSize: 13,
-                                    color: Color(0xFF8A8A9A),
+                                    color: cs.onSurface.withOpacity(0.5), // ✅ era 0xFF8A8A9A
                                   ),
                                 ),
                               ],
@@ -160,12 +162,12 @@ class _LoginViewState extends State<LoginView> {
 
                           const SizedBox(height: 28),
 
-                          const Text(
+                          Text(
                             'Iniciar sesión',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF1A1A2E),
+                              color: cs.onSurface, // ✅ era 0xFF1A1A2E
                             ),
                           ),
 
@@ -175,11 +177,12 @@ class _LoginViewState extends State<LoginView> {
                           TextFormField(
                             controller: _email,
                             keyboardType: TextInputType.emailAddress,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 15,
-                              color: Color(0xFF1A1A2E),
+                              color: cs.onSurface, // ✅ era 0xFF1A1A2E
                             ),
                             decoration: _inputDecoration(
+                              context: context,
                               hint: 'Correo electrónico',
                               icon: Icons.mail_outline_rounded,
                             ),
@@ -194,11 +197,12 @@ class _LoginViewState extends State<LoginView> {
                           TextFormField(
                             controller: _password,
                             obscureText: !_verPass,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 15,
-                              color: Color(0xFF1A1A2E),
+                              color: cs.onSurface, // ✅ era 0xFF1A1A2E
                             ),
                             decoration: _inputDecoration(
+                              context: context,
                               hint: 'Contraseña',
                               icon: Icons.lock_outline_rounded,
                               suffix: IconButton(
@@ -206,7 +210,7 @@ class _LoginViewState extends State<LoginView> {
                                   _verPass
                                       ? Icons.visibility_off_outlined
                                       : Icons.visibility_outlined,
-                                  color: const Color(0xFF8A8A9A),
+                                  color: cs.onSurface.withOpacity(0.4), // ✅ era 0xFF8A8A9A
                                   size: 20,
                                 ),
                                 onPressed: () =>
@@ -231,7 +235,7 @@ class _LoginViewState extends State<LoginView> {
                                     height: 20,
                                     child: Checkbox(
                                       value: _recuerdar,
-                                      activeColor: AppTheme.primary,
+                                      activeColor: primary,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(4),
                                       ),
@@ -241,11 +245,11 @@ class _LoginViewState extends State<LoginView> {
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  const Text(
+                                  Text(
                                     'Recuérdame',
                                     style: TextStyle(
                                       fontSize: 13,
-                                      color: Color(0xFF5A5A6A),
+                                      color: cs.onSurface.withOpacity(0.6), // ✅ era 0xFF5A5A6A
                                     ),
                                   ),
                                 ],
@@ -262,7 +266,7 @@ class _LoginViewState extends State<LoginView> {
                                   '¿Olvidaste tu contraseña?',
                                   style: TextStyle(
                                     fontSize: 13,
-                                    color: AppTheme.primary,
+                                    color: primary,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -276,23 +280,23 @@ class _LoginViewState extends State<LoginView> {
                             Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: Colors.red.shade50,
+                                color: cs.errorContainer, // ✅ era Colors.red.shade50
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.red.shade200),
+                                border: Border.all(color: cs.error.withOpacity(0.4)),
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.error_outline,
-                                    color: Colors.red,
+                                    color: cs.error, // ✅ era Colors.red
                                     size: 18,
                                   ),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
                                       _error!,
-                                      style: const TextStyle(
-                                        color: Colors.red,
+                                      style: TextStyle(
+                                        color: cs.error, // ✅ era Colors.red
                                         fontSize: 13,
                                       ),
                                     ),
@@ -310,7 +314,7 @@ class _LoginViewState extends State<LoginView> {
                             child: ElevatedButton(
                               onPressed: _cargando ? null : _login,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.primary,
+                                backgroundColor: primary,
                                 foregroundColor: Colors.white,
                                 elevation: 0,
                                 shape: RoundedRectangleBorder(
@@ -339,27 +343,27 @@ class _LoginViewState extends State<LoginView> {
                           const SizedBox(height: 22),
 
                           // ── Divisor ─────────────────────────────────
-                          const Row(
+                          Row(
                             children: [
                               Expanded(
                                 child: Divider(
-                                  color: Color(0xFFE0E0E0),
+                                  color: cs.outlineVariant, // ✅ era 0xFFE0E0E0
                                   thickness: 1,
                                 ),
                               ),
                               Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 12),
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
                                 child: Text(
                                   'O',
                                   style: TextStyle(
                                     fontSize: 13,
-                                    color: Color(0xFF8A8A9A),
+                                    color: cs.onSurface.withOpacity(0.5), // ✅ era 0xFF8A8A9A
                                   ),
                                 ),
                               ),
                               Expanded(
                                 child: Divider(
-                                  color: Color(0xFFE0E0E0),
+                                  color: cs.outlineVariant, // ✅ era 0xFFE0E0E0
                                   thickness: 1,
                                 ),
                               ),
@@ -372,11 +376,11 @@ class _LoginViewState extends State<LoginView> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Text(
+                              Text(
                                 '¿No tienes cuenta? ',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Color(0xFF5A5A6A),
+                                  color: cs.onSurface.withOpacity(0.6), // ✅ era 0xFF5A5A6A
                                 ),
                               ),
                               GestureDetector(
@@ -385,7 +389,7 @@ class _LoginViewState extends State<LoginView> {
                                   'Regístrate',
                                   style: TextStyle(
                                     fontSize: 14,
-                                    color: AppTheme.primary,
+                                    color: primary,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -407,38 +411,43 @@ class _LoginViewState extends State<LoginView> {
     );
   }
 
+  // ── Recibe context para acceder al tema ──────────────────────────────────
   InputDecoration _inputDecoration({
+    required BuildContext context, // ✅ se agregó context
     required String hint,
     required IconData icon,
     Widget? suffix,
   }) {
+    final cs = Theme.of(context).colorScheme;
+    final primary = AppTheme.primaryOf(context);
+
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: Color(0xFFAAAAAA), fontSize: 15),
-      prefixIcon: Icon(icon, color: const Color(0xFF8A8A9A), size: 20),
+      hintStyle: TextStyle(color: cs.onSurface.withOpacity(0.35), fontSize: 15), // ✅
+      prefixIcon: Icon(icon, color: cs.onSurface.withOpacity(0.4), size: 20),    // ✅
       suffixIcon: suffix,
       filled: true,
-      fillColor: const Color(0xFFF7F8FA),
+      fillColor: cs.onSurface.withOpacity(0.05),  // ✅ era 0xFFF7F8FA
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFE8E8F0), width: 1),
+        borderSide: BorderSide(color: cs.outlineVariant, width: 1), // ✅
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFE8E8F0), width: 1),
+        borderSide: BorderSide(color: cs.outlineVariant, width: 1), // ✅
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: AppTheme.primary, width: 1.5),
+        borderSide: BorderSide(color: primary, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.red, width: 1),
+        borderSide: BorderSide(color: cs.error, width: 1), // ✅
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.red, width: 1.5),
+        borderSide: BorderSide(color: cs.error, width: 1.5), // ✅
       ),
     );
   }
@@ -493,6 +502,9 @@ class _SheetOlvidePasswordState extends State<_SheetOlvidePassword> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final primary = AppTheme.primaryOf(context);
+
     return Container(
       padding: EdgeInsets.fromLTRB(
         24,
@@ -500,9 +512,9 @@ class _SheetOlvidePasswordState extends State<_SheetOlvidePassword> {
         24,
         MediaQuery.of(context).viewInsets.bottom + 40,
       ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      decoration: BoxDecoration(
+        color: cs.surface, // ✅ era Colors.white
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -513,7 +525,7 @@ class _SheetOlvidePasswordState extends State<_SheetOlvidePassword> {
             height: 4,
             margin: const EdgeInsets.only(bottom: 28),
             decoration: BoxDecoration(
-              color: Colors.grey.shade300,
+              color: cs.onSurface.withOpacity(0.2), // ✅ era Colors.grey.shade300
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -523,7 +535,7 @@ class _SheetOlvidePasswordState extends State<_SheetOlvidePassword> {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: AppTheme.primary,
+              color: primary,
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
@@ -537,10 +549,10 @@ class _SheetOlvidePasswordState extends State<_SheetOlvidePassword> {
           // Título
           Text(
             _enviado ? '¡Correo enviado!' : 'Recuperar contraseña',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1A1A2E),
+              color: cs.onSurface, // ✅ era 0xFF1A1A2E
             ),
           ),
           const SizedBox(height: 12),
@@ -555,7 +567,7 @@ class _SheetOlvidePasswordState extends State<_SheetOlvidePassword> {
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,
-              color: Colors.grey.shade500,
+              color: cs.onSurface.withOpacity(0.5), // ✅ era Colors.grey.shade500
               height: 1.5,
             ),
           ),
@@ -568,20 +580,23 @@ class _SheetOlvidePasswordState extends State<_SheetOlvidePassword> {
               keyboardType: TextInputType.emailAddress,
               decoration: InputDecoration(
                 hintText: 'Correo electrónico',
-                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                hintStyle: TextStyle(
+                  color: cs.onSurface.withOpacity(0.35), // ✅ era Colors.grey.shade400
+                  fontSize: 14,
+                ),
                 prefixIcon: Icon(
                   Icons.mail_outline_rounded,
-                  color: AppTheme.primary,
+                  color: primary,
                 ),
                 filled: true,
-                fillColor: const Color(0xFFF7F8FA),
+                fillColor: cs.onSurface.withOpacity(0.05), // ✅ era 0xFFF7F8FA
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppTheme.primary, width: 1.5),
+                  borderSide: BorderSide(color: primary, width: 1.5),
                 ),
               ),
             ),
@@ -590,22 +605,25 @@ class _SheetOlvidePasswordState extends State<_SheetOlvidePassword> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.red.shade50,
+                  color: cs.errorContainer, // ✅ era Colors.red.shade50
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red.shade200),
+                  border: Border.all(color: cs.error.withOpacity(0.4)),
                 ),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.error_outline,
-                      color: Colors.red,
+                      color: cs.error, // ✅ era Colors.red
                       size: 18,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         _error!,
-                        style: const TextStyle(color: Colors.red, fontSize: 13),
+                        style: TextStyle(
+                          color: cs.error, // ✅ era Colors.red
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   ],
@@ -626,7 +644,7 @@ class _SheetOlvidePasswordState extends State<_SheetOlvidePassword> {
                   ? () => Navigator.pop(context)
                   : _enviar,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primary,
+                backgroundColor: primary,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
@@ -661,8 +679,8 @@ class _SheetOlvidePasswordState extends State<_SheetOlvidePassword> {
               child: OutlinedButton(
                 onPressed: () => Navigator.pop(context),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF1A1A2E),
-                  side: BorderSide(color: Colors.grey.shade300),
+                  foregroundColor: cs.onSurface, // ✅ era 0xFF1A1A2E
+                  side: BorderSide(color: cs.outline), // ✅ era Colors.grey.shade300
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),

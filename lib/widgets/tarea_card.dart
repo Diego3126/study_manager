@@ -14,22 +14,21 @@ class TareaCard extends StatelessWidget {
     required this.onCompletada,
   });
 
-  String _formatFecha(DateTime fecha) {
+  String _formatFecha(DateTime fechaHora) {
     final ahora = DateTime.now();
     final hoy = DateTime(ahora.year, ahora.month, ahora.day);
-    final dia = DateTime(fecha.year, fecha.month, fecha.day);
+    final dia = DateTime(fechaHora.year, fechaHora.month, fechaHora.day);
     final diff = dia.difference(hoy).inDays;
 
-    // Hora para mostrar junto a "Hoy"
     final hora = tarea.horaEntrega != null
-        ? ' ${tarea.horaEntrega!.hour.toString().padLeft(2, '0')}:${tarea.horaEntrega!.minute.toString().padLeft(2, '0')}'
+        ? ' ${fechaHora.hour.toString().padLeft(2, '0')}:${fechaHora.minute.toString().padLeft(2, '0')}'
         : '';
 
     if (diff == 0) return 'Hoy$hora';
     if (diff == 1) return 'Mañana$hora';
-    if (diff == -1) return 'Ayer';
-    if (diff < 0) return 'Hace ${-diff} días';
-    return '${fecha.day}/${fecha.month}/${fecha.year}$hora';
+    if (diff == -1) return 'Ayer$hora'; // ✅ también muestra hora en ayer
+    if (diff < 0) return 'Hace ${-diff} días$hora';
+    return '${dia.day}/${dia.month}/${dia.year}$hora';
   }
 
   bool get _vencida {
@@ -128,7 +127,7 @@ class TareaCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    _formatFecha(tarea.fechaEntrega),
+                    _formatFecha(tarea.fechaHoraEntrega),
                     style: TextStyle(
                       fontSize: 12,
                       color: _vencida ? Colors.red : Colors.grey.shade600,

@@ -89,7 +89,7 @@ class _PerfilViewState extends State<PerfilView> {
                             children: [
                               _OptionTile(
                                 icon: Icons.mail_outline_rounded,
-                                iconColor: AppTheme.primary,
+                                iconColor: AppTheme.primaryOf(context),
                                 title: _usuario!.email,
                                 subtitle: 'Correo electrónico',
                                 showArrow: false,
@@ -97,7 +97,7 @@ class _PerfilViewState extends State<PerfilView> {
                               _Divider(),
                               _OptionTile(
                                 icon: Icons.phone_outlined,
-                                iconColor: AppTheme.primary,
+                                iconColor: AppTheme.primaryOf(context),
                                 title: _usuario!.telefono.isEmpty
                                     ? 'No registrado'
                                     : _usuario!.telefono,
@@ -115,7 +115,7 @@ class _PerfilViewState extends State<PerfilView> {
                             children: [
                               _OptionTile(
                                 icon: Icons.person_outline_rounded,
-                                iconColor: AppTheme.primary,
+                                iconColor: AppTheme.primaryOf(context),
                                 title: 'Información personal',
                                 onTap: () => context.push('/perfil/info'),
                               ),
@@ -130,14 +130,14 @@ class _PerfilViewState extends State<PerfilView> {
                             children: [
                               _OptionTile(
                                 icon: Icons.palette_outlined,
-                                iconColor: AppTheme.primary,
+                                iconColor: AppTheme.primaryOf(context),
                                 title: 'Apariencia',
                                 onTap: _cambiarTema,
                               ),
                               _Divider(),
                               _OptionTile(
                                 icon: Icons.lock_outline_rounded,
-                                iconColor: AppTheme.primary,
+                                iconColor: AppTheme.primaryOf(context),
                                 title: 'Cambiar contraseña',
                                 onTap: _cambiarContrasena,
                               ),
@@ -180,7 +180,7 @@ class _PerfilViewState extends State<PerfilView> {
               height: 4,
               margin: const EdgeInsets.only(bottom: 24),
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -353,9 +353,9 @@ class _SectionCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1A1D2E) : Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: isDark ? Border.all(color: const Color(0xFF2A2D45)) : null,
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
         boxShadow: isDark
             ? null
             : [
