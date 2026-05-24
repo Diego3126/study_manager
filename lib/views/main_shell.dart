@@ -25,6 +25,14 @@ class MainShell extends StatelessWidget {
     final index = _currentIndex(context);
     return Scaffold(
       body: child,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.push('/asistente'),
+        backgroundColor: AppTheme.primary,
+        foregroundColor: Colors.white,
+        tooltip: 'Asistente IA',
+        child: const Icon(Icons.auto_awesome_rounded),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [
@@ -78,4 +86,5 @@ class MainShell extends StatelessWidget {
       ),
     );
   }
+
 }

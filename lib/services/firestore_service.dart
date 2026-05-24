@@ -83,4 +83,92 @@ bool _mismoMinuto(DateTime a, DateTime b) =>
   Future<void> eliminar(String id) async {
     await _tareas.doc(id).delete();
   }
+
+  // ── Chat asistente ────────────────────────────────────────────────────────
+
+  CollectionReference<Map<String, dynamic>> get _chat {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) throw Exception('Usuario no autenticado');
+    return _db.collection('usuarios').doc(uid).collection('chat_asistente');
+  }
+
+  Future<void> guardarMensaje({
+    required String texto,
+    required bool esUsuario,
+    required DateTime hora,
+  }) async {
+    await _chat.add({
+      'texto': texto,
+      'esUsuario': esUsuario,
+      'hora': Timestamp.fromDate(hora),
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> obtenerHistorialChat({int limite = 50}) async {
+    final snap = await _chat
+        .orderBy('hora', descending: false)
+        .limitToLast(limite)
+        .get();
+    return snap.docs.map((doc) => doc.data()).toList();
+  }
+
+  Future<void> limpiarHistorialChat() async {
+    final snap = await _chat.get();
+    final batch = _db.batch();
+    for (final doc in snap.docs) {
+      batch.delete(doc.reference);
+    }
+    await batch.commit();
+  }
+
+  // ── Sesiones pomodoro ─────────────────────────────────────────────────────
+
+  CollectionReference<Map<String, dynamic>> get _sesiones {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) throw Exception('Usuario no autenticado');
+    return _db.collection('usuarios').doc(uid).collection('sesiones_pomodoro');
+  }
+
+  Future<Map<String, dynamic>> obtenerResumenPomodoro() async {
+    final ahora = DateTime.now();
+    final inicioDia = DateTime(ahora.year, ahora.month, ahora.day);
+    final inicioSemana = inicioDia.subtract(Duration(days: ahora.weekday - 1));
+
+    final snap = await _sesiones.get();
+    final docs = snap.docs.map((d) => d.data()).toList();
+
+    // Sesiones de hoy
+    final hoy = docs.where((d) {
+      final fecha = DateTime.tryParse(d['fecha'] ?? '');
+      return fecha != null && fecha.isAfter(inicioDia);
+    }).toList();
+
+    // Sesiones de esta semana
+    final semana = docs.where((d) {
+      final fecha = DateTime.tryParse(d['fecha'] ?? '');
+      return fecha != null && fecha.isAfter(inicioSemana);
+    }).toList();
+
+    // Conteos de hoy
+    final enfoqueHoy = hoy.where((d) => d['tipo'] == 'Enfoque').length;
+    final descansosHoy = hoy.where((d) => d['tipo'] != 'Enfoque').length;
+    final productividadHoy = hoy.isEmpty
+        ? 0
+        : (hoy.map((d) => (d['productividad'] as num?) ?? 0).reduce((a, b) => a + b) / hoy.length).round();
+
+    // Conteos de la semana
+    final enfoqueSemana = semana.where((d) => d['tipo'] == 'Enfoque').length;
+    final mejorProductividad = semana.isEmpty
+        ? 0
+        : semana.map((d) => (d['productividad'] as num?) ?? 0).reduce((a, b) => a > b ? a : b);
+
+    return {
+      'enfoqueHoy': enfoqueHoy,
+      'descansosHoy': descansosHoy,
+      'productividadHoy': productividadHoy,
+      'enfoqueSemana': enfoqueSemana,
+      'mejorProductividad': mejorProductividad,
+      'totalSesiones': docs.length,
+    };
+  }
 }
