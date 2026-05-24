@@ -5,7 +5,7 @@ import 'firestore_service.dart';
 
 class AiService {
   static const String _apiKey =
-      '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';
+      'AQUI PONER LA API KEY DE GROQ';
   static const String _url = 'https://api.groq.com/openai/v1/chat/completions';
   static const String _modelo = 'llama-3.3-70b-versatile';
 
